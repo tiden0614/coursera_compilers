@@ -1,0 +1,72 @@
+#name "./s03.test.cool"
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: c
+#1 ERROR "Unmatched character: c"
+LEXER BUG - UNMATCHED: a
+#1 ERROR "Unmatched character: a"
+LEXER BUG - UNMATCHED: n
+#1 ERROR "Unmatched character: n"
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: t
+#1 ERROR "Unmatched character: t"
+LEXER BUG - UNMATCHED: h
+#1 ERROR "Unmatched character: h"
+LEXER BUG - UNMATCHED: e
+#1 ERROR "Unmatched character: e"
+LEXER BUG - UNMATCHED: y
+#1 ERROR "Unmatched character: y"
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: h
+#1 ERROR "Unmatched character: h"
+LEXER BUG - UNMATCHED: a
+#1 ERROR "Unmatched character: a"
+LEXER BUG - UNMATCHED: n
+#1 ERROR "Unmatched character: n"
+LEXER BUG - UNMATCHED: d
+#1 ERROR "Unmatched character: d"
+LEXER BUG - UNMATCHED: l
+#1 ERROR "Unmatched character: l"
+LEXER BUG - UNMATCHED: e
+#1 ERROR "Unmatched character: e"
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: E
+#1 ERROR "Unmatched character: E"
+LEXER BUG - UNMATCHED: O
+#1 ERROR "Unmatched character: O"
+LEXER BUG - UNMATCHED: F
+#1 ERROR "Unmatched character: F"
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: i
+#1 ERROR "Unmatched character: i"
+LEXER BUG - UNMATCHED: n
+#1 ERROR "Unmatched character: n"
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: "
+#1 ERROR "Unmatched character: \""
+LEXER BUG - UNMATCHED: -
+#1 ERROR "Unmatched character: -"
+LEXER BUG - UNMATCHED: -
+#1 ERROR "Unmatched character: -"
+LEXER BUG - UNMATCHED: "
+#1 ERROR "Unmatched character: \""
+LEXER BUG - UNMATCHED:  
+#1 ERROR "Unmatched character:  "
+LEXER BUG - UNMATCHED: s
+#1 ERROR "Unmatched character: s"
+LEXER BUG - UNMATCHED: t
+#1 ERROR "Unmatched character: t"
+LEXER BUG - UNMATCHED: a
+#1 ERROR "Unmatched character: a"
+LEXER BUG - UNMATCHED: t
+#1 ERROR "Unmatched character: t"
+LEXER BUG - UNMATCHED: e
+#1 ERROR "Unmatched character: e"
+LEXER BUG - UNMATCHED: ?
+#1 ERROR "Unmatched character: ?"
+#1 ERROR "EOF in comment"

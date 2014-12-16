@@ -1,0 +1,37 @@
+5c5,6
+< STR_CONST "\"--\""
+---
+> STR_CONST "\""
+> LEXER BUG - UNMATCHED: \
+7c8
+< '-'
+---
+> LEXER BUG - UNMATCHED: \
+10,16c11
+< LONGERROR
+< STR_CONST "--\\"
+< LONGERROR
+< STR_CONST "\\"
+< STR_CONST "\\"
+< STR_CONST "\"--\""
+< LONGERROR
+---
+> LEXER BUG - UNMATCHED: \
+18a14
+> LEXER BUG - UNMATCHED: \
+20,26c16,17
+< STR_CONST "--\\"
+< LONGERROR
+< STR_CONST "\\"
+< STR_CONST "--"
+< LONGERROR
+< STR_CONST "\""
+< LONGERROR
+---
+> '-'
+> LEXER BUG - UNMATCHED: \
+28c19,20
+< STR_CONST "-\""
+---
+> STR_CONST ""
+> LEXER BUG - UNMATCHED: \

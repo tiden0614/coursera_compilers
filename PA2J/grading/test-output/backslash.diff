@@ -1,0 +1,7 @@
+3c3,6
+< STR_CONST "I'm about to excape a newline \n"
+---
+> LEXER BUG - UNMATCHED: \
+> LONGERROR
+> LONGERROR
+> LONGERROR

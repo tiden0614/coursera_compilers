@@ -1,0 +1,7 @@
+5c5,8
+< STR_CONST "This is, though \\\n"
+---
+> LEXER BUG - UNMATCHED: \
+> LONGERROR
+> LONGERROR
+> LONGERROR

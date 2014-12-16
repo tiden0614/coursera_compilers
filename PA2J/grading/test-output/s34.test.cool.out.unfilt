@@ -1,0 +1,10 @@
+#name "./s34.test.cool"
+#1 OBJECTID before_it
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+#4 ERROR "Unterminated string constant"
+#4 OBJECTID doens
+LEXER BUG - UNMATCHED: '
+#4 ERROR "Unmatched character: '"
+#4 OBJECTID t
+#4 OBJECTID end

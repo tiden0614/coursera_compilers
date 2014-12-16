@@ -1,0 +1,11 @@
+#name "./invalidinvisible.cool"
+#1 OBJECTID g
+LEXER BUG - UNMATCHED: 
+#1 ERROR "Unmatched character: \001"
+LEXER BUG - UNMATCHED: 
+#1 ERROR "Unmatched character: \002"
+LEXER BUG - UNMATCHED: 
+#1 ERROR "Unmatched character: \003"
+LEXER BUG - UNMATCHED: 
+#1 ERROR "Unmatched character: \004"
+#1 OBJECTID h

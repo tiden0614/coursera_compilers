@@ -1,0 +1,21 @@
+#name "./wq0607-c3.cool"
+#3 STR_CONST "\\"
+#3 STR_CONST "\"\""
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+#3 STR_CONST ""
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+#3 STR_CONST "\\"
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+#3 STR_CONST "\\"
+#3 STR_CONST ""
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+#3 STR_CONST "\""
+LEXER BUG - UNMATCHED: \
+#3 ERROR "Unmatched character: \\"
+#4 ERROR "Unterminated string constant"

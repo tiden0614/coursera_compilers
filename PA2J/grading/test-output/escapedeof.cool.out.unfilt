@@ -1,0 +1,4 @@
+#name "./escapedeof.cool"
+LEXER BUG - UNMATCHED: \
+#1 ERROR "Unmatched character: \\"
+#2 ERROR "Unterminated string constant"
