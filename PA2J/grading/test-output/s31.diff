@@ -1,5 +1,0 @@
-1c1,2
-< ERROR "_"
----
-> LEXER BUG - UNMATCHED: _
-> LONGERROR

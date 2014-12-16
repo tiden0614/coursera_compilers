@@ -22,6 +22,7 @@ import java_cup.runtime.Symbol;
 	private int block_comment_depth = 0;
     private int curr_lineno = 1;
 	private int before_comment_state;
+	private boolean string_error_mark = false;
     int get_curr_lineno() {
 	return curr_lineno;
     }
@@ -39,6 +40,15 @@ import java_cup.runtime.Symbol;
 	private IntTable intTable = AbstractTable.inttable;
 	private IdTable idTable = AbstractTable.idtable;
 	private StringTable stringTable = AbstractTable.stringtable;
+	private AbstractSymbol addInt(String text) {
+		return intTable.addString(text);
+	}
+	private AbstractSymbol addId(String text) {
+		return idTable.addString(text);
+	}
+	private AbstractSymbol addStr(String text) {
+		return stringTable.addString(text);
+	}
 %}
 
 %init{
@@ -72,6 +82,7 @@ import java_cup.runtime.Symbol;
 	yybegin(YYINITIAL);
 	return new Symbol(TokenConstants.ERROR, "EOF in string constant");
 	case LINECOM:
+	break;
 	case BLOCKCOM:
 	yybegin(YYINITIAL);
 	return new Symbol(TokenConstants.ERROR, "EOF in comment");
@@ -88,27 +99,18 @@ ULETTER = [A-Z]
 LETTER  = [a-zA-Z]
 INT     = {DIGIT}+
 FLOAT   = {INT}(\.{INT}+)?
-WSPACE  = [ \f\r\t\v]
+WSPACE  = [ \f\r\t\x0b]
 
 %state LINECOM, BLOCKCOM, STRING
 
 %%
-<YYINITIAL, STRING>"(*"                 { 
-											block_comment_depth = 1;
-											before_comment_state = yy_lexical_state;
-											yybegin(BLOCKCOM); 
-										}
-<YYINITIAL, STRING>--                   {
-											before_comment_state = yy_lexical_state;
-											yybegin(LINECOM);
-										}
-
-<LINECOM>[^\n]*\n                       {
+<LINECOM>[^\n]*                         {}
+<LINECOM>\n								{
 											curr_lineno++;
 											yybegin(before_comment_state);
 										}
 <BLOCKCOM>"(*"                          {block_comment_depth++;}
-<BLOCKCOM>[^\n]							{ }
+<BLOCKCOM>[^\n]							{}
 <BLOCKCOM>\n							{curr_lineno++;}
 <BLOCKCOM>"*)"                          { 
 											if (--block_comment_depth <= 0) {
@@ -118,42 +120,66 @@ WSPACE  = [ \f\r\t\v]
 
 <STRING>\"                              { 
 											yybegin(YYINITIAL);
-											return new Symbol(TokenConstants.STR_CONST, 
-													stringTable.addString(string_buf.toString()));
+											if (string_buf.length() >= MAX_STR_CONST && !string_error_mark)
+												return new Symbol(TokenConstants.ERROR, "String constant too long");
+											if (!string_error_mark)
+												return new Symbol(TokenConstants.STR_CONST, addStr(string_buf.toString()));
 										}
-<STRING>\n                              { 
-											curr_lineno++;
-											yybegin(YYINITIAL);
-											return new Symbol(TokenConstants.ERROR, "Unterminated string constant");
-										}
-<STRING>\0                              {
-											yybegin(YYINITIAL);
-											return new Symbol(TokenConstants.ERROR, "String contains null character");
-										}
-<STRING>\\.                             {
+<STRING>\\[^\0\n]                       {
 											String t = yytext();
-											if("\\\n".equals(t)) {
-												curr_lineno++;
-												string_buf.append("\n");
-											}
-											else if ("\\n".equals(t)) string_buf.append("\n");
+											if ("\\n".equals(t)) string_buf.append("\n");
 											else if ("\\f".equals(t)) string_buf.append("\f");
 											else if ("\\t".equals(t)) string_buf.append("\t");
 											else if ("\\b".equals(t)) string_buf.append("\b");
 											else string_buf.append(t.substring(1));
 										}
-<STRING>[^\"\n\\]+                      { string_buf.append(yytext()); }
+<STRING>\n                              { 
+											curr_lineno++;
+											yybegin(YYINITIAL);
+											if (!string_error_mark) {
+												string_error_mark = true;
+												return new Symbol(TokenConstants.ERROR, "Unterminated string constant");
+											}
+										}
+<STRING>\0|\\\0                         {
+											if (!string_error_mark) {
+												string_error_mark = true;
+												return new Symbol(TokenConstants.ERROR, "String contains null character");
+											}
+										}
+<STRING>\\\n							{
+											curr_lineno++;
+											string_buf.append("\n");
+										}
+<STRING>[^\"\n\0\\]                     { string_buf.append(yytext()); }
+<STRING>\\								{ 
+											if (!string_error_mark) {
+												string_error_mark = true;
+												return new Symbol(TokenConstants.ERROR, "Single backslash"); 
+											}
+										}
 
 
 
-<YYINITIAL>{WSPACE}+                    { }
+<YYINITIAL>"(*"							{ 
+											block_comment_depth = 1;
+											before_comment_state = yy_lexical_state;
+											yybegin(BLOCKCOM); 
+										}
+<YYINITIAL>--							{
+											before_comment_state = yy_lexical_state;
+											yybegin(LINECOM);
+										}
+
+<YYINITIAL>{WSPACE}                     {}
 <YYINITIAL>\n							{curr_lineno++;}
 <YYINITIAL>\"                           {
 											string_buf.setLength(0);
+											string_error_mark = false;
 											yybegin(STRING);
 										}
 <YYINITIAL>"*)"                         {return new Symbol(TokenConstants.ERROR, "Unmatched *)");}
-<YYINITIAL>{INT}						{return new Symbol(TokenConstants.INT_CONST, intTable.addString(yytext()));}
+<YYINITIAL>{INT}						{return new Symbol(TokenConstants.INT_CONST, addInt(yytext()));}
 <YYINITIAL>t[rR][uU][eE]        		{return new Symbol(TokenConstants.BOOL_CONST, true);}
 <YYINITIAL>f[aA][lL][sS][eE]    		{return new Symbol(TokenConstants.BOOL_CONST, false);}
 <YYINITIAL>[oO][fF]                     {return new Symbol(TokenConstants.OF);}
@@ -173,8 +199,8 @@ WSPACE  = [ \f\r\t\v]
 <YYINITIAL>[cC][lL][aA][sS][sS]         {return new Symbol(TokenConstants.CLASS);}
 <YYINITIAL>[iI][sS][vV][oO][iI][dD]     {return new Symbol(TokenConstants.ISVOID);}
 <YYINITIAL>[iI][nN][hH][eE][rR][iI][tT][sS]     {return new Symbol(TokenConstants.INHERITS);}
-<YYINITIAL>[A-Z][_a-zA-Z0-9]*           {return new Symbol(TokenConstants.TYPEID, idTable.addString(yytext()));}
-<YYINITIAL>[_a-z][_a-zA-Z0-9]*          {return new Symbol(TokenConstants.OBJECTID, idTable.addString(yytext()));}
+<YYINITIAL>[A-Z][_a-zA-Z0-9]*           {return new Symbol(TokenConstants.TYPEID, addId(yytext()));}
+<YYINITIAL>[a-z][_a-zA-Z0-9]*           {return new Symbol(TokenConstants.OBJECTID, addId(yytext()));}
 <YYINITIAL>"@"							{return new Symbol(TokenConstants.AT);}
 <YYINITIAL>"~"							{return new Symbol(TokenConstants.NEG);}
 <YYINITIAL>";"							{return new Symbol(TokenConstants.SEMI);}
@@ -193,16 +219,5 @@ WSPACE  = [ \f\r\t\v]
 <YYINITIAL>"<"							{return new Symbol(TokenConstants.LT);}
 <YYINITIAL>"<="							{return new Symbol(TokenConstants.LE);}
 <YYINITIAL>"<-"							{return new Symbol(TokenConstants.ASSIGN);}
-<YYINITIAL>"=>"			                { /* Sample lexical rule for "=>" arrow.
-                                             Further lexical rules should be defined
-                                             here, after the last %% separator */
-                                             return new Symbol(TokenConstants.DARROW); }
-
-.                                       { /* This rule should be the very last
-                                             in your lexical specification and
-                                             will match match everything not
-                                             matched by other lexical rules. */
-                                             System.err.println("LEXER BUG - UNMATCHED: " + yytext()); 
-											 return new Symbol(TokenConstants.ERROR, 
-													 "Unmatched character: " + yytext());
-										}
+<YYINITIAL>"=>"			                {return new Symbol(TokenConstants.DARROW);}
+.                                       {return new Symbol(TokenConstants.ERROR, yytext());}

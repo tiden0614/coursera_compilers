@@ -1,5 +1,0 @@
-1c1,2
-< #5 ERROR "!"
----
-> LEXER BUG - UNMATCHED: !
-> #5 ERROR "Unmatched character: !"

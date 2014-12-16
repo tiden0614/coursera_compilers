@@ -1,5 +1,0 @@
-#name "./lineno2.cool"
-LEXER BUG - UNMATCHED: !
-#5 ERROR "Unmatched character: !"
-#6 OBJECTID fjdk
-#7 STR_CONST ""
