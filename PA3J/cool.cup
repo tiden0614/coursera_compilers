@@ -190,6 +190,10 @@ actual_list
 		{: RESULT = new Expressions(curr_lineno()).appendElement(e); :}
 	| actual_list:al COMMA any_expr:e
 		{: RESULT = al.appendElement(e); :}
+	| actual_list:al COMMA error
+		{: RESULT = al; :}
+	| error COMMA
+	| error
 	;
 
 expr_list
