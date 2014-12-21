@@ -117,7 +117,6 @@ class
 formal
 	::= OBJECTID:o COLON TYPEID:t
 		{: RESULT = new formalc(curr_lineno(), o, t); :}
-	| error
 	;
 
 formal_list
@@ -127,6 +126,9 @@ formal_list
 		{: RESULT = new Formals(curr_lineno()).appendElement(f); :}
 	| formal_list:fl COMMA formal:f
 		{: RESULT = fl.appendElement(f); :}
+	| formal_list:fl COMMA error
+		{: RESULT = fl; :}
+	| error COMMA
 	;
 
 /* Feature list may be empty, but no empty features in list. */
@@ -148,13 +150,12 @@ attr
 		{: RESULT = new attr(curr_lineno(), o, t, new no_expr(curr_lineno())); :}
 	| OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a SEMI
 		{: RESULT = new attr(curr_lineno(), o, t, a); :}
-	| error
 	;
 
 method
 	::= OBJECTID:o LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE any_expr:e RBRACE SEMI
 		{: RESULT = new method(curr_lineno(), o, f, t, e); :}
-	| error
+	| error LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE any_expr:e RBRACE SEMI
 	;
 
 /* Expressions */
@@ -193,7 +194,6 @@ actual_list
 	| actual_list:al COMMA error
 		{: RESULT = al; :}
 	| error COMMA
-	| error
 	;
 
 expr_list
