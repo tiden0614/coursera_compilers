@@ -76,7 +76,7 @@ nonterminal Case branch;
 nonterminal Expressions expr_list, actual_list;
 nonterminal Expression assign, block, bool_const, comp, cond, dispatch, divide, eq, int_const, 
 			isvoid, leq, let, loop, lt, mul, neg, new_, no_expr, object, plus, static_dispatch,
-			string_const, sub, typcase, paren_expr, let_inner, any_expr;
+			string_const, sub, typcase, let_inner, any_expr;
 
 /* Precedence declarations go here. */
 precedence left ASSIGN;
@@ -111,13 +111,13 @@ class
 				   f, curr_filename()); :}
 	| CLASS TYPEID:n INHERITS TYPEID:p LBRACE dummy_feature_list:f RBRACE SEMI
 	    {: RESULT = new class_c(curr_lineno(), n, p, f, curr_filename()); :}
-	| /* empty */
-		{:  :}
+	| error
 	;
 
 formal
 	::= OBJECTID:o COLON TYPEID:t
 		{: RESULT = new formalc(curr_lineno(), o, t); :}
+	| error
 	;
 
 formal_list
@@ -148,18 +148,42 @@ attr
 		{: RESULT = new attr(curr_lineno(), o, t, new no_expr(curr_lineno())); :}
 	| OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a SEMI
 		{: RESULT = new attr(curr_lineno(), o, t, a); :}
+	| error
 	;
 
 method
-	::= OBJECTID:o LPAREN formal_list:f RPAREN COLON TYPEID:t block:e SEMI
+	::= OBJECTID:o LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE any_expr:e RBRACE SEMI
 		{: RESULT = new method(curr_lineno(), o, f, t, e); :}
+	| error
 	;
 
 /* Expressions */
 any_expr
-	::= assign | dispatch | static_dispatch | cond | loop | typcase | block | let | plus | sub
-	| mul | divide | neg | lt | eq | leq | comp | int_const | bool_const | string_const | new_
-	| isvoid | object | paren_expr;
+	::= assign:e {: RESULT = e; :}
+	| dispatch:e {: RESULT = e; :}
+	| static_dispatch:e {: RESULT = e; :}
+	| cond:e {: RESULT = e; :}
+	| loop:e {: RESULT = e; :}
+	| typcase:e {: RESULT = e; :}
+	| block:e {: RESULT = e; :}
+	| let:e {: RESULT = e; :}
+	| plus:e {: RESULT = e; :}
+	| sub:e {: RESULT = e; :}
+	| mul:e {: RESULT = e; :}
+	| divide:e {: RESULT = e; :}
+	| neg:e {: RESULT = e; :}
+	| lt:e {: RESULT = e; :}
+	| eq:e {: RESULT = e; :}
+	| leq:e {: RESULT = e; :}
+	| comp:e {: RESULT = e; :}
+	| int_const:e {: RESULT = e; :}
+	| bool_const:e {: RESULT = e; :}
+	| string_const:e {: RESULT = e; :}
+	| new_:e {: RESULT = e; :}
+	| isvoid:e {: RESULT = e; :}
+	| object:e {: RESULT = e; :}
+	| LPAREN any_expr:e RPAREN {: RESULT = e; :} 
+	| error;
 
 actual_list
 	::= any_expr:e
@@ -173,23 +197,15 @@ expr_list
 		{: RESULT = new Expressions(curr_lineno()).appendElement(e); :}
 	| expr_list:el SEMI any_expr:e
 		{: RESULT = el.appendElement(e); :}
+	| error
 	;
-
-paren_expr
-	::= LPAREN any_expr:e RPAREN
-		{: RESULT = e; :}
-	;
-
-/*
-no_expr
-	::= 
-		{: RESULT = new no_expr(curr_lineno()); :}
-	;
-*/
 
 block
 	::= LBRACE expr_list:el RBRACE
 		{: RESULT = new block(curr_lineno(), el); :}
+	| LBRACE expr_list:el SEMI RBRACE
+		{: RESULT = new block(curr_lineno(), el); :}
+	| error
 	;
 
 object
