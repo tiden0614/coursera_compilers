@@ -76,7 +76,7 @@ nonterminal Case branch;
 nonterminal Expressions expr_list, actual_list;
 nonterminal Expression assign, block, bool_const, comp, cond, dispatch, divide, eq, int_const, 
 			isvoid, leq, let, loop, lt, mul, neg, new_, no_expr, object, plus, static_dispatch,
-			string_const, sub, typcase, let_inner, any_expr, expr_no_compare;
+			string_const, sub, typcase, let_inner, expr, expr_no_compare;
 
 /* Precedence declarations go here. */
 precedence left ASSIGN;
@@ -148,14 +148,14 @@ dummy_feature_list
 attr
 	::= OBJECTID:o COLON TYPEID:t SEMI
 		{: RESULT = new attr(curr_lineno(), o, t, new no_expr(curr_lineno())); :}
-	| OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a SEMI
+	| OBJECTID:o COLON TYPEID:t ASSIGN expr:a SEMI
 		{: RESULT = new attr(curr_lineno(), o, t, a); :}
 	;
 
 method
-	::= OBJECTID:o LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE any_expr:e RBRACE SEMI
+	::= OBJECTID:o LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE expr:e RBRACE SEMI
 		{: RESULT = new method(curr_lineno(), o, f, t, e); :}
-	| error LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE any_expr:e RBRACE SEMI
+	| error LPAREN formal_list:f RPAREN COLON TYPEID:t LBRACE expr:e RBRACE SEMI
 	;
 
 /* Expressions */
@@ -180,10 +180,10 @@ expr_no_compare
 	| new_:e {: RESULT = e; :}
 	| isvoid:e {: RESULT = e; :}
 	| object:e {: RESULT = e; :}
-	| LPAREN any_expr:e RPAREN {: RESULT = e; :} 
+	| LPAREN expr:e RPAREN {: RESULT = e; :} 
 	| error;
 
-any_expr
+expr
 	::= expr_no_compare:e {: RESULT = e; :}
 	| lt:e {: RESULT = e; :}
 	| leq:e {: RESULT = e; :}
@@ -191,9 +191,9 @@ any_expr
 	;
 
 actual_list
-	::= any_expr:e
+	::= expr:e
 		{: RESULT = new Expressions(curr_lineno()).appendElement(e); :}
-	| actual_list:al COMMA any_expr:e
+	| actual_list:al COMMA expr:e
 		{: RESULT = al.appendElement(e); :}
 	| actual_list:al COMMA error
 		{: RESULT = al; :}
@@ -201,9 +201,9 @@ actual_list
 	;
 
 expr_list
-	::= any_expr:e
+	::= expr:e
 		{: RESULT = new Expressions(curr_lineno()).appendElement(e); :}
-	| expr_list:el SEMI any_expr:e
+	| expr_list:el SEMI expr:e
 		{: RESULT = el.appendElement(e); :}
 	| error
 	;
@@ -242,17 +242,17 @@ new_
 	;
 
 isvoid
-	::= ISVOID any_expr:e
+	::= ISVOID expr:e
 		{: RESULT = new isvoid(curr_lineno(), e); :}
 	;
 
 comp
-	::= NOT any_expr:e
+	::= NOT expr:e
 		{: RESULT = new comp(curr_lineno(), e); :}
 	;
 
 neg
-	::= NEG any_expr:e
+	::= NEG expr:e
 		{: RESULT = new neg(curr_lineno(), e); :}
 	;
 
@@ -272,34 +272,34 @@ leq
 	;
 
 plus
-	::= any_expr:e1 PLUS any_expr:e2
+	::= expr:e1 PLUS expr:e2
 		{: RESULT = new plus(curr_lineno(), e1, e2); :}
 	;
 
 sub
-	::= any_expr:e1 MINUS any_expr:e2
+	::= expr:e1 MINUS expr:e2
 		{: RESULT = new sub(curr_lineno(), e1, e2); :}
 	;
 
 mul
-	::= any_expr:e1 MULT any_expr:e2
+	::= expr:e1 MULT expr:e2
 		{: RESULT = new mul(curr_lineno(), e1, e2); :}
 	;
 
 divide
-	::= any_expr:e1 DIV any_expr:e2
+	::= expr:e1 DIV expr:e2
 		{: RESULT = new divide(curr_lineno(), e1, e2); :}
 	;
 
 assign
-	::= OBJECTID:o ASSIGN any_expr:e
+	::= OBJECTID:o ASSIGN expr:e
 		{: RESULT = new assign(curr_lineno(), o, e); :}
 	;
 
 dispatch
-	::= any_expr:e1 DOT OBJECTID:o LPAREN RPAREN
+	::= expr:e1 DOT OBJECTID:o LPAREN RPAREN
 		{: RESULT = new dispatch(curr_lineno(), e1, o, new Expressions(curr_lineno())); :}
-	| any_expr:e1 DOT OBJECTID:o LPAREN actual_list:al RPAREN
+	| expr:e1 DOT OBJECTID:o LPAREN actual_list:al RPAREN
 		{: RESULT = new dispatch(curr_lineno(), e1, o, al); :}
 	| OBJECTID:o LPAREN RPAREN
 		{: RESULT = new dispatch(curr_lineno(), new object(curr_lineno(), TreeConstants.self), o, new Expressions(curr_lineno())); :}
@@ -308,21 +308,21 @@ dispatch
 	;
 
 static_dispatch
-	::= any_expr:e1 AT TYPEID:t DOT OBJECTID:o LPAREN RPAREN
+	::= expr:e1 AT TYPEID:t DOT OBJECTID:o LPAREN RPAREN
 		{: RESULT = new static_dispatch(curr_lineno(), e1, t, o, new Expressions(curr_lineno())); :}
-	| any_expr:e1 AT TYPEID:t DOT OBJECTID:o LPAREN actual_list:al RPAREN
+	| expr:e1 AT TYPEID:t DOT OBJECTID:o LPAREN actual_list:al RPAREN
 		{: RESULT = new static_dispatch(curr_lineno(), e1, t, o, al); :}
 	;
 
 cond
-	::= IF any_expr:e1 THEN any_expr:e2 ELSE any_expr:e3 FI
+	::= IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
 		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
-	| IF any_expr:e1 THEN any_expr:e2 FI
+	| IF expr:e1 THEN expr:e2 FI
 		{: RESULT = new cond(curr_lineno(), e1, e2, new no_expr(curr_lineno())); :}
 	;
 
 branch
-	::= OBJECTID:o COLON TYPEID:t DARROW any_expr:e SEMI
+	::= OBJECTID:o COLON TYPEID:t DARROW expr:e SEMI
 		{: RESULT = new branch(curr_lineno(), o, t, e); :}
 	;
 
@@ -334,35 +334,35 @@ branch_list
 	;
 
 typcase
-	::= CASE any_expr:e OF branch_list:bl ESAC
+	::= CASE expr:e OF branch_list:bl ESAC
 		{: RESULT = new typcase(curr_lineno(), e, bl); :}
 	;
 
 loop
-	::= WHILE any_expr:e1 LOOP any_expr:e2 POOL
+	::= WHILE expr:e1 LOOP expr:e2 POOL
 		{: RESULT = new loop(curr_lineno(), e1, e2); :}
-	| WHILE any_expr:e1 LOOP any_expr:e2 error
+	| WHILE expr:e1 LOOP expr:e2 error
 		{: RESULT = new loop(curr_lineno(), e1, e2); :}
 	;
 
 let
-	::= LET OBJECTID:o COLON TYPEID:t IN any_expr:e
+	::= LET OBJECTID:o COLON TYPEID:t IN expr:e
 		{: RESULT = new let(curr_lineno(), o, t, new no_expr(curr_lineno()), e); :}
-	| LET OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a IN any_expr:e
+	| LET OBJECTID:o COLON TYPEID:t ASSIGN expr:a IN expr:e
 		{: RESULT = new let(curr_lineno(), o, t, a, e); :}
 	| LET OBJECTID:o COLON TYPEID:t let_inner:l
 		{: RESULT = new let(curr_lineno(), o, t, new no_expr(curr_lineno()), l); :}
-	| LET OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a let_inner:l
+	| LET OBJECTID:o COLON TYPEID:t ASSIGN expr:a let_inner:l
 		{: RESULT = new let(curr_lineno(), o, t, a, l); :}
 	;
 
 let_inner
 	::= COMMA OBJECTID:o COLON TYPEID:t let_inner:l
 		{: RESULT = new let(curr_lineno(), o, t, new no_expr(curr_lineno()), l); :}
-	| COMMA OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a let_inner:l
+	| COMMA OBJECTID:o COLON TYPEID:t ASSIGN expr:a let_inner:l
 		{: RESULT = new let(curr_lineno(), o, t, a, l); :}
-	| COMMA OBJECTID:o COLON TYPEID:t IN any_expr:e
+	| COMMA OBJECTID:o COLON TYPEID:t IN expr:e
 		{: RESULT = new let(curr_lineno(), o, t, new no_expr(curr_lineno()), e); :}
-	| COMMA OBJECTID:o COLON TYPEID:t ASSIGN any_expr:a IN any_expr:e
+	| COMMA OBJECTID:o COLON TYPEID:t ASSIGN expr:a IN expr:e
 		{: RESULT = new let(curr_lineno(), o, t, a, e); :}
 	;
