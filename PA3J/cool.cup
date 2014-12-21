@@ -263,6 +263,13 @@ dispatch
 		{: RESULT = new dispatch(curr_lineno(), TreeConstants.self, o, al); :}
 	;
 
+static_dispatch
+	::= Expression:e1 AT TYPEID:t DOT OBJECTID:o LPAREN RPAREN
+		{: RESULT = new static_dispatch(curr_lineno(), e1, t, o, new Expressions(curr_lineno())); :}
+	| Expression:e1 AT TYPEID:t DOT OBJECTID:o LPAREN actual_list:al RPAREN
+		{: RESULT = new static_dispatch(curr_lineno(), e1, t, o, al); :}
+	;
+
 cond
 	::= IF Expression:e1 THEN Expression:e2 ELSE Expression:e3 FI
 		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
