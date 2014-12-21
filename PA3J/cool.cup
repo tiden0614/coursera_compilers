@@ -76,7 +76,7 @@ nonterminal Case branch;
 nonterminal Expressions expr_list, actual_list;
 nonterminal Expression assign, block, bool_const, comp, cond, dispatch, divide, eq, int_const, 
 			isvoid, leq, let, loop, lt, mul, neg, new_, no_expr, object, plus, static_dispatch,
-			string_const, sub, typcase, let_inner, any_expr;
+			string_const, sub, typcase, let_inner, any_expr, expr_no_compare;
 
 /* Precedence declarations go here. */
 precedence left ASSIGN;
@@ -159,7 +159,7 @@ method
 	;
 
 /* Expressions */
-any_expr
+expr_no_compare
 	::= assign:e {: RESULT = e; :}
 	| dispatch:e {: RESULT = e; :}
 	| static_dispatch:e {: RESULT = e; :}
@@ -173,9 +173,6 @@ any_expr
 	| mul:e {: RESULT = e; :}
 	| divide:e {: RESULT = e; :}
 	| neg:e {: RESULT = e; :}
-	| lt:e {: RESULT = e; :}
-	| eq:e {: RESULT = e; :}
-	| leq:e {: RESULT = e; :}
 	| comp:e {: RESULT = e; :}
 	| int_const:e {: RESULT = e; :}
 	| bool_const:e {: RESULT = e; :}
@@ -185,6 +182,13 @@ any_expr
 	| object:e {: RESULT = e; :}
 	| LPAREN any_expr:e RPAREN {: RESULT = e; :} 
 	| error;
+
+any_expr
+	::= expr_no_compare:e {: RESULT = e; :}
+	| lt:e {: RESULT = e; :}
+	| leq:e {: RESULT = e; :}
+	| eq:e {: RESULT = e; :}
+	;
 
 actual_list
 	::= any_expr:e
@@ -253,17 +257,17 @@ neg
 	;
 
 eq
-	::= any_expr:e1 EQ any_expr:e2
+	::= expr_no_compare:e1 EQ expr_no_compare:e2
 		{: RESULT = new eq(curr_lineno(), e1, e2); :}
 	;
 
 lt
-	::= any_expr:e1 LT any_expr:e2
+	::= expr_no_compare:e1 LT expr_no_compare:e2
 		{: RESULT = new lt(curr_lineno(), e1, e2); :}
 	;
 	
 leq
-	::= any_expr:e1 LE any_expr:e2
+	::= expr_no_compare:e1 LE expr_no_compare:e2
 		{: RESULT = new leq(curr_lineno(), e1, e2); :}
 	;
 
