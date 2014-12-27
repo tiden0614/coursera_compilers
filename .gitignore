@@ -3,3 +3,5 @@ grading*
 *.output
 *.iml
 .idea/*
+cs143/*
+class/

@@ -2,6 +2,9 @@
  * symbols include the primitive type and method names, as well as fixed
  * names used by the runtime system.  */
 class TreeConstants {
+    public static final AbstractSymbol base_class_filename
+            = AbstractTable.stringtable.addString("<base class>");
+
     public static final AbstractSymbol arg 
 	= AbstractTable.idtable.addString("arg");
     
