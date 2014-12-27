@@ -6,6 +6,27 @@ import java.io.PrintStream;
 class ClassTable {
     private int semantErrors;
     private PrintStream errorStream;
+	private class_c baseClass;
+	private Map<AbstractSymbol, class_c> classMap = new HashTable<AbstractSymbol, class_c>();
+
+	private class_c addClass(
+			int lineNumber,
+			AbstractSymbol className,
+			AbstractSymbol parentName,
+			Features features,
+			AbstractSymbol fileName){
+		if (classMap.keys().contains(className)) {
+		    //TODO error handling if there is already a class with this name
+		}
+		class_c c = new class_c(lineNumber, className, parentName, features, fileName);
+		classMap.put(className, c);
+		return c;
+	}
+
+	private class_c getParentClass(class_c c) {
+		return classMap.get(c.parent);
+	}
+
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -32,7 +53,7 @@ class ClassTable {
 	//        copy() : SELF_TYPE       returns a copy of the object
 
 	class_c Object_class = 
-	    new class_c(0, 
+	    addClass(0, 
 		       TreeConstants.Object_, 
 		       TreeConstants.No_class,
 		       new Features(0)
@@ -52,6 +73,7 @@ class ClassTable {
 					      TreeConstants.SELF_TYPE,
 					      new no_expr(0))),
 		       filename);
+	baseClass = Object_class;
 	
 	// The IO class inherits from Object. Its methods are
 	//        out_string(Str) : SELF_TYPE  writes a string to the output
@@ -60,7 +82,7 @@ class ClassTable {
 	//        in_int() : Int                "   an int     "  "     "
 
 	class_c IO_class = 
-	    new class_c(0,
+	    addClass(0,
 		       TreeConstants.IO,
 		       TreeConstants.Object_,
 		       new Features(0)
@@ -96,7 +118,7 @@ class ClassTable {
 	// "val" for the integer.
 
 	class_c Int_class = 
-	    new class_c(0,
+	    addClass(0,
 		       TreeConstants.Int,
 		       TreeConstants.Object_,
 		       new Features(0)
@@ -108,7 +130,7 @@ class ClassTable {
 
 	// Bool also has only the "val" slot.
 	class_c Bool_class = 
-	    new class_c(0,
+	    addClass(0,
 		       TreeConstants.Bool,
 		       TreeConstants.Object_,
 		       new Features(0)
@@ -126,7 +148,7 @@ class ClassTable {
 	//       substr(arg: Int, arg2: Int): Str substring selection
 
 	class_c Str_class =
-	    new class_c(0,
+	    addClass(0,
 		       TreeConstants.Str,
 		       TreeConstants.Object_,
 		       new Features(0)
@@ -176,6 +198,7 @@ class ClassTable {
 	errorStream = System.err;
 	
 	/* fill this in */
+	installBasicClasses();
     }
 
     /** Prints line number and file name of the given class.
