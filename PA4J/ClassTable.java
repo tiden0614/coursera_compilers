@@ -255,12 +255,17 @@ class ClassTable {
         AbstractSymbol temp = className;
         while (m == null) {
             m = methodEnvs.get(temp).get(methodName);
-            if (temp == TreeConstants.Object_) {
+            if (temp == TreeConstants.Object_ && m == null) {
                 PrintStream p = semantError(classMap.get(className));
                 p.println("Class " + className + " does not have a method " + methodName);
                 return null;
             }
             temp = getParentClassName(temp);
+            if (temp == null) {
+                PrintStream p = semantError(classMap.get(className));
+                p.println("Class " + className + " does not have a method " + methodName);
+                return null;
+            }
         }
         return m;
     }
@@ -362,6 +367,11 @@ class ClassTable {
             } else {
                 loadClass(c);
             }
+        }
+        if (!classMap.containsKey(TreeConstants.Main)) {
+            PrintStream p = semantError();
+            p.println("No Main is declared");
+            return;
         }
         for (class_c cc : classMap.values()) {
             checkLoop(cc);
