@@ -52,7 +52,7 @@ class ClassTable {
     }
 
     private AbstractSymbol getParentClassName(AbstractSymbol c) {
-        return classMap.get(c).name;
+        return classMap.get(c).parent;
     }
 
     private class_c getParentClass(class_c c) {
