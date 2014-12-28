@@ -427,7 +427,8 @@ class ClassTable {
             return;
         }
         for (class_c cc : classMap.values()) {
-            if (!classMap.containsKey(cc.parent)) {
+            // check if there is any parent class undefined
+            if (!classMap.containsKey(cc.parent) && cc.name != TreeConstants.Object_) {
                 PrintStream p = semantError(cc);
                 p.println("Class " + cc.parent + " is undefined");
                 return;
