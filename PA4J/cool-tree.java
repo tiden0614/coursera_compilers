@@ -871,7 +871,7 @@ class static_dispatch extends Expression {
             set_type(TreeConstants.Object_);
             return;
         }
-        method m = classTable.getMethod(type_name, name);
+        method m = classTable.getMethod(type_name, name, curClass);
         if (m == null) {
             return;
         }
@@ -975,7 +975,7 @@ class dispatch extends Expression {
         }
         AbstractSymbol expr_true_type = expr.get_type() == TreeConstants.SELF_TYPE?
                 curClass.name : expr.get_type();
-        method m = classTable.getMethod(expr_true_type, name);
+        method m = classTable.getMethod(expr_true_type, name, curClass);
         if (m == null) {
             return;
         }

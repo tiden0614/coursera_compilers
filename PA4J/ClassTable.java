@@ -254,22 +254,17 @@ class ClassTable {
         return classMap.containsKey(className);
     }
 
-    public method getMethod(AbstractSymbol className, AbstractSymbol methodName) {
+    public method getMethod(AbstractSymbol className, AbstractSymbol methodName, class_c curClass) {
         method m = null;
         AbstractSymbol temp = className;
         while (m == null) {
             m = methodEnvs.get(temp).get(methodName);
             if (temp == TreeConstants.Object_ && m == null) {
-                PrintStream p = semantError(classMap.get(className));
+                PrintStream p = semantError(curClass);
                 p.println("Class " + className + " does not have a method " + methodName);
                 return null;
             }
             temp = getParentClassName(temp);
-            if (temp == TreeConstants.No_class || temp == null) {
-                PrintStream p = semantError(classMap.get(className));
-                p.println("Class " + className + " does not have a method " + methodName);
-                return null;
-            }
         }
         return m;
     }
