@@ -891,7 +891,11 @@ class static_dispatch extends Expression {
                 i++;
                 Expression _actual = (Expression) ea.nextElement();
                 formalc _formal = (formalc) ef.nextElement();
-                if (!classTable.isSubclass(_actual.get_type(), _formal.type_decl)) {
+                AbstractSymbol formal_type = _formal.type_decl == TreeConstants.SELF_TYPE?
+                        type_name : _formal.type_decl;
+                AbstractSymbol actual_type = _actual.get_type() == TreeConstants.SELF_TYPE?
+                        curClass.name : _actual.get_type();
+                if (!classTable.isSubclass(actual_type, formal_type)) {
                     classTable.semantError(curClass, this, "The type of the " + i +
                             "th actual parameter does not conform to that defined by " + name.getString() +
                             "'s formal list");
@@ -997,7 +1001,9 @@ class dispatch extends Expression {
                 formalc _formal = (formalc) ef.nextElement();
                 AbstractSymbol formal_type = _formal.type_decl == TreeConstants.SELF_TYPE?
                         expr.get_type() : _formal.type_decl;
-                if (!classTable.isSubclass(_actual.get_type(), formal_type)) {
+                AbstractSymbol actual_type = _actual.get_type() == TreeConstants.SELF_TYPE?
+                        curClass.name : _actual.get_type();
+                if (!classTable.isSubclass(actual_type, formal_type)) {
                     classTable.semantError(curClass, this, "The type of the " + i +
                             "th actual parameter does not conform to that defined by " + name.getString() +
                             "'s formal list");
