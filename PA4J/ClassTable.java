@@ -255,6 +255,10 @@ class ClassTable {
     }
 
     public method getMethod(AbstractSymbol className, AbstractSymbol methodName, class_c curClass) {
+        if (!classMap.containsKey(className)) {
+            PrintStream p = semantError(curClass);
+            p.println("Class " + className + " is undefined");
+        }
         method m = null;
         AbstractSymbol temp = className;
         while (m == null) {
