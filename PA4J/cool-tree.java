@@ -543,11 +543,18 @@ class method extends Feature {
             Map<AbstractSymbol, AbstractSymbol> objectEnvWithFormal =
                     new HashMap<AbstractSymbol, AbstractSymbol>();
             objectEnvWithFormal.putAll(objectEnv);
+            Set<AbstractSymbol> formalNameSet = new HashSet<AbstractSymbol>();
             for (Enumeration e = formals.getElements(); e.hasMoreElements(); ) {
                 formalc formal = (formalc) e.nextElement();
                 if (formal.name == TreeConstants.self) {
                     classTable.semantError(curClass, this, "Cannot use self as formal parameter");
                     continue;
+                } else if (formalNameSet.contains(formal.name)) {
+                    classTable.semantError(curClass, this, "Formal parameter " + formal.name +
+                            " is multiply defined");
+                    continue;
+                } else {
+                    formalNameSet.add(formal.name);
                 }
                 objectEnvWithFormal.put(formal.name, formal.type_decl);
             }
