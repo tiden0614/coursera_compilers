@@ -580,8 +580,8 @@ class method extends Feature {
         method mFromSuper = classTable.getMethodFromSuper(curClass.name, name, curClass);
         if (mFromSuper != null) {
             if (formals.getLength() != mFromSuper.formals.getLength()) {
-                classTable.semantError(curClass, this, "In redefined method " + name +
-                ", the number of parameters is different from original declaration");
+                classTable.semantError(curClass, this, "Incompatible number of formal parameters in "
+                    + "redefined method " + name);
             } else {
                 Enumeration eThis = formals.getElements();
                 Enumeration eThat = mFromSuper.formals.getElements();
