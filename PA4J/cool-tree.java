@@ -1312,9 +1312,6 @@ class let extends Expression {
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
                            ClassTable classTable,
                            class_c curClass) {
-        if (identifier == TreeConstants.self) {
-            classTable.semantError(curClass, this, "Cannot declare self as variable name");
-        }
         if (init.get_type() == null) {
             init.infer_type(objectEnv, classTable, curClass);
         }
@@ -1328,16 +1325,21 @@ class let extends Expression {
             bodyEnv.put(identifier, trueType);
             body.infer_type(bodyEnv, classTable, curClass);
         }
-        if (!(init instanceof no_expr)) {
-            AbstractSymbol initType = init.get_type();
-            AbstractSymbol trueTypeStr = type_decl == TreeConstants.SELF_TYPE?
-                    curClass.getName() : type_decl;
-            if (!classTable.isSubclass(initType, trueTypeStr)) {
-                classTable.semantError(curClass, this, "A subclass of " + trueTypeStr + " is expected");
-            }
-        } else {
-            set_type(body.get_type());
+        if (identifier == TreeConstants.self) {
+            classTable.semantError(curClass, this, "Cannot declare self as variable name");
+            set_type(TreeConstants.Object_);
+            return;
         }
+        if (!(init instanceof no_expr)) {
+            AbstractSymbol init_type = init.get_type() == TreeConstants.SELF_TYPE?
+                    curClass.getName() : init.get_type();
+            AbstractSymbol true_type_decl = type_decl == TreeConstants.SELF_TYPE?
+                    curClass.getName() : type_decl;
+            if (!classTable.isSubclass(init_type, true_type_decl)) {
+                classTable.semantError(curClass, this, "A subclass of " + true_type_decl + " is expected");
+            }
+        }
+        set_type(body.get_type());
     }
 }
 
