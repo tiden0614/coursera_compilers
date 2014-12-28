@@ -617,8 +617,10 @@ class attr extends Feature {
             init.infer_type(objectEnv, classTable, curClass);
         }
         if (!(init instanceof no_expr)) {
-            AbstractSymbol true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
-            if (!classTable.isSubclass(init.get_type(), true_type)) {
+            AbstractSymbol attr_true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
+            AbstractSymbol init_true_type = init.get_type() == TreeConstants.SELF_TYPE?
+                    curClass.name : init.get_type();
+            if (!classTable.isSubclass(init_true_type, attr_true_type)) {
                 classTable.semantError(curClass, this, "Subclass of " + type_decl.getString() + " expected");
             }
         }
