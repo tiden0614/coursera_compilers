@@ -620,6 +620,14 @@ class attr extends Feature {
         if (init.get_type() == null) {
             init.infer_type(objectEnv, classTable, curClass);
         }
+        if (objectEnv.containsKey(name)) {
+            Map<AbstractSymbol, AbstractSymbol> ownEnv = classTable.getOwnObjectEnv(curClass.name);
+            if (ownEnv.containsKey(name)) {
+                classTable.semantError(curClass, this, "Duplicate declaration of " + name);
+            } else {
+                classTable.semantError(curClass, this, "Attribute " + name + " is an attribute of an inherited class");
+            }
+        }
         if (!(init instanceof no_expr)) {
             AbstractSymbol attr_true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
             AbstractSymbol init_true_type = init.get_type() == TreeConstants.SELF_TYPE?

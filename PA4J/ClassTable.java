@@ -274,6 +274,15 @@ class ClassTable {
         return m;
     }
 
+    public Map<AbstractSymbol, AbstractSymbol> getOwnObjectEnv(AbstractSymbol className) {
+        if (!classMap.containsKey(className)) {
+            PrintStream p = semantError();
+            p.println(className + " is not declared");
+            return null;
+        }
+        return objectEnvs.get(className);
+    }
+
     public Map<AbstractSymbol, AbstractSymbol> getObjectEnv(AbstractSymbol className) {
         if (!classMap.containsKey(className)) {
             PrintStream p = semantError();
