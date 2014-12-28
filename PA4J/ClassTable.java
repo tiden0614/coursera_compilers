@@ -250,6 +250,10 @@ class ClassTable {
 
     }
 
+    public boolean doesClassExist(AbstractSymbol className) {
+        return classMap.containsKey(className);
+    }
+
     public method getMethod(AbstractSymbol className, AbstractSymbol methodName) {
         method m = null;
         AbstractSymbol temp = className;

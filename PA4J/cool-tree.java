@@ -539,6 +539,10 @@ class method extends Feature {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv, ClassTable classTable, class_c curClass) {
+        if (return_type != TreeConstants.SELF_TYPE && !classTable.doesClassExist(return_type)) {
+            classTable.semantError(curClass, this, "Return type does not exist");
+            return;
+        }
         if (expr.get_type() == null) {
             Map<AbstractSymbol, AbstractSymbol> objectEnvWithFormal =
                     new HashMap<AbstractSymbol, AbstractSymbol>();
