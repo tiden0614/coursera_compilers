@@ -680,7 +680,8 @@ class attr extends Feature {
             AbstractSymbol init_true_type = init.get_type() == TreeConstants.SELF_TYPE?
                     curClass.name : init.get_type();
             if (!classTable.isSubclass(init_true_type, attr_true_type)) {
-                classTable.semantError(curClass, this, "Subclass of " + type_decl.getString() + " expected");
+                classTable.semantError(curClass, this, "Initialization of attribute " + name +
+                         " expects a subtype of " + type_decl + ", while got " + init_true_type);
             }
         }
     }
