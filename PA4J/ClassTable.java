@@ -265,7 +265,7 @@ class ClassTable {
                 return null;
             }
             temp = getParentClassName(temp);
-            if (temp == null) {
+            if (temp == TreeConstants.No_class || temp == null) {
                 PrintStream p = semantError(classMap.get(className));
                 p.println("Class " + className + " does not have a method " + methodName);
                 return null;
@@ -315,6 +315,11 @@ class ClassTable {
     }
 
     public AbstractSymbol findCommonAncestor(AbstractSymbol c1, AbstractSymbol c2) {
+        if (!classMap.containsKey(c1) || !classMap.containsKey(c2)) {
+            PrintStream p = semantError();
+            p.println("Error: " + c1 + " or " + " is undeclared");
+            return TreeConstants.Object_;
+        }
         if (c1 == TreeConstants.Object_ || c2 == TreeConstants.Object_
                 || c1 == TreeConstants.No_type || c2 == TreeConstants.No_type) {
             return TreeConstants.Object_;
@@ -331,7 +336,7 @@ class ClassTable {
             c2 = c3;
         }
         // cut the longer list to the same length as the shorter one
-        while (len1 > len2 && len1 > 0) {
+        while (len1 > len2 && c1 != TreeConstants.Object_) {
             c1 = getParentClassName(c1);
             len1--;
         }
