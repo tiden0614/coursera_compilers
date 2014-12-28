@@ -285,7 +285,8 @@ class ClassTable {
     }
 
     public AbstractSymbol findCommonAncestor(AbstractSymbol c1, AbstractSymbol c2) {
-        if (c1 == TreeConstants.Object_ || c2 == TreeConstants.Object_) {
+        if (c1 == TreeConstants.Object_ || c2 == TreeConstants.Object_
+                || c1 == TreeConstants.No_type || c2 == TreeConstants.No_type) {
             return TreeConstants.Object_;
         }
         int len1 = getDistanceToRoot(c1);

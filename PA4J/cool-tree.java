@@ -607,7 +607,7 @@ class attr extends Feature {
             classTable.semantError(curClass, this, "Cannot declare attribute with name self");
         }
         if (init.get_type() == null) {
-                init.infer_type(objectEnv, classTable, curClass);
+            init.infer_type(objectEnv, classTable, curClass);
         }
         if (!(init instanceof no_expr)) {
             AbstractSymbol true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
@@ -2069,7 +2069,7 @@ class no_expr extends Expression {
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
                            ClassTable classTable,
                            class_c curClass) {
-        set_type(TreeConstants.Object_);
+        set_type(TreeConstants.No_type);
     }
 }
 
