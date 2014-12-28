@@ -425,7 +425,7 @@ class ClassTable {
         }
         if (!classMap.containsKey(TreeConstants.Main)) {
             PrintStream p = semantError();
-            p.println("Class Main is not defined");
+            p.println("Class Main is not defined.");
             return;
         }
         for (class_c cc : classMap.values()) {
