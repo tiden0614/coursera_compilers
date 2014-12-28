@@ -1586,7 +1586,7 @@ class neg extends Expression {
         if (e1.get_type() != TreeConstants.Int) {
             classTable.semantError(curClass, this, "Int Expected");
         } else {
-            set_type(TreeConstants.Bool);
+            set_type(TreeConstants.Int);
         }
     }
 }
