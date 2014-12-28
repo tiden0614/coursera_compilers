@@ -275,7 +275,23 @@ class ClassTable {
     }
 
     public Map<AbstractSymbol, AbstractSymbol> getObjectEnv(AbstractSymbol className) {
-        return objectEnvs.get(className);
+        if (!classMap.containsKey(className)) {
+            PrintStream p = semantError();
+            p.println(className + " is not declared");
+            return null;
+        }
+        // use a stack to contain all super classes' envs
+        Stack<Map<AbstractSymbol, AbstractSymbol>> envStack = new Stack<Map<AbstractSymbol, AbstractSymbol>>();
+        envStack.add(objectEnvs.get(className));
+        while (className != TreeConstants.Object_) {
+            className = getParentClassName(className);
+            envStack.push(objectEnvs.get(className));
+        }
+        Map<AbstractSymbol, AbstractSymbol> objEnvContainingSupers = new HashMap<AbstractSymbol, AbstractSymbol>();
+        while (!envStack.isEmpty()) {
+            objEnvContainingSupers.putAll(envStack.pop());
+        }
+        return objEnvContainingSupers;
     }
 
     public boolean isSubclass(AbstractSymbol c1, AbstractSymbol c2) {
