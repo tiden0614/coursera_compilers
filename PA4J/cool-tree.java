@@ -587,6 +587,14 @@ class method extends Feature {
                 " of method " + name + " does not conform to declared return type " + return_type);
             return;
         }
+        // check if there is formal defined as SELF_TYPE
+        for (Enumeration e = formals.getElements(); e.hasMoreElements(); ) {
+            formalc f = (formalc) e.nextElement();
+            if (f.type_decl == TreeConstants.SELF_TYPE) {
+                classTable.semantError(curClass, this, "Formal parameter " + f.name + " cannot have type SELF_TYPE");
+            }
+        }
+        // check if this method is redefined properly
         method mFromSuper = classTable.getMethodFromSuper(curClass.name, name, curClass);
         if (mFromSuper != null) {
             if (formals.getLength() != mFromSuper.formals.getLength()) {
