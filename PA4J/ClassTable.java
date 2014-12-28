@@ -360,16 +360,17 @@ class ClassTable {
         return c1;
     }
 
-    public AbstractSymbol findCommonAncestor(List<AbstractSymbol> list) {
-        if (list.size() == 0) {
+    public AbstractSymbol findCommonAncestor(Set<AbstractSymbol> typeSet) {
+        AbstractSymbol[] types = (AbstractSymbol[]) typeSet.toArray();
+        if (types.length == 0) {
             PrintStream p = semantError();
             p.print("Error: case expression with no branch");
             return null;
-        } else if (list.size() == 1) {
-            return list.get(0);
+        } else if (types.length == 1) {
+            return types[0];
         } else {
-            AbstractSymbol last = list.get(0);
-            for (AbstractSymbol next : list) {
+            AbstractSymbol last = types[0];
+            for (AbstractSymbol next : types) {
                 last = findCommonAncestor(last, next);
             }
             return last;

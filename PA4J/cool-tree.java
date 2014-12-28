@@ -1195,10 +1195,12 @@ class typcase extends Expression {
         if (expr.get_type() == null) {
             expr.infer_type(objectEnv, classTable, curClass);
         }
-        List<AbstractSymbol> branchTypes = new LinkedList<AbstractSymbol>();
         Enumeration enumeration = cases.getElements();
+        Set<AbstractSymbol> branchTypes = new HashSet<AbstractSymbol>();
         while (enumeration.hasMoreElements()) {
             branch _branch = (branch) enumeration.nextElement();
+            AbstractSymbol true_branch_type = _branch.type_decl == TreeConstants.SELF_TYPE?
+                    curClass.name : _branch.type_decl;
             if (_branch.name == TreeConstants.self) {
                 classTable.semantError(curClass, this, "Cannot declare self as variable name");
             }
@@ -1207,6 +1209,10 @@ class typcase extends Expression {
                 branchEnv.putAll(objectEnv);
                 branchEnv.put(_branch.name, _branch.type_decl);
                 _branch.expr.infer_type(branchEnv, classTable, curClass);
+            }
+            if (branchTypes.contains(true_branch_type)) {
+                classTable.semantError(curClass, this, "Duplicate branch " + true_branch_type + " in case statement");
+                continue;
             }
             branchTypes.add(_branch.expr.get_type());
         }
