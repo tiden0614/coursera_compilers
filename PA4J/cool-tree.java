@@ -1337,11 +1337,7 @@ class let extends Expression {
         if (body.get_type() == null) {
             Map<AbstractSymbol, AbstractSymbol> bodyEnv = new Hashtable<AbstractSymbol, AbstractSymbol>();
             bodyEnv.putAll(objectEnv);
-            AbstractSymbol trueType = type_decl;
-            if (trueType == TreeConstants.SELF_TYPE) {
-                trueType = curClass.name;
-            }
-            bodyEnv.put(identifier, trueType);
+            bodyEnv.put(identifier, type_decl);
             body.infer_type(bodyEnv, classTable, curClass);
         }
         if (identifier == TreeConstants.self) {
