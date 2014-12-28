@@ -857,6 +857,9 @@ class static_dispatch extends Expression {
             return;
         }
         method m = classTable.getMethod(type_name, name);
+        if (m == null) {
+            return;
+        }
         Formals formals = m.formals;
         if (actual.getLength() != formals.getLength()) {
             classTable.semantError(curClass, this, "The number of actual parameters does not conform to " +
@@ -958,6 +961,9 @@ class dispatch extends Expression {
         AbstractSymbol expr_true_type = expr.get_type() == TreeConstants.SELF_TYPE?
                 curClass.name : expr.get_type();
         method m = classTable.getMethod(expr_true_type, name);
+        if (m == null) {
+            return;
+        }
         Formals formals = m.formals;
         if (actual.getLength() != formals.getLength()) {
             classTable.semantError(curClass, this, "The number of actual parameters does not conform to " +

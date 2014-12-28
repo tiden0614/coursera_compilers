@@ -245,7 +245,17 @@ class ClassTable {
     }
 
     public method getMethod(AbstractSymbol className, AbstractSymbol methodName) {
-        return methodEnvs.get(className).get(methodName);
+        method m = null;
+        AbstractSymbol temp = className;
+        while (m == null) {
+            if (!classMap.containsKey(temp)) {
+                errorStream.println(className.getString() + "does not have a method " + methodName);
+                return null;
+            }
+            m = methodEnvs.get(temp).get(methodName);
+            temp = getParentClassName(temp);
+        }
+        return m;
     }
 
     public Map<AbstractSymbol, AbstractSymbol> getObjectEnv(AbstractSymbol className) {
