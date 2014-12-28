@@ -476,6 +476,10 @@ class class_c extends Class_ {
     }
 
     public void semant_analyse(ClassTable classTable) {
+        if (parent == TreeConstants.Bool || parent == TreeConstants.Str || parent == TreeConstants.SELF_TYPE) {
+            classTable.semantError(this, this, "Class " + name + " cannot inherit class " + parent);
+            return;
+        }
         Map<AbstractSymbol, AbstractSymbol> objectEnv = classTable.getObjectEnv(this.name);
         // check types for attributes and methods
         for (Enumeration e = features.getElements(); e.hasMoreElements(); ) {
