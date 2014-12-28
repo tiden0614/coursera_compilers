@@ -2048,6 +2048,9 @@ class isvoid extends Expression {
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
                            ClassTable classTable,
                            class_c curClass) {
+        if (e1.get_type() == null) {
+            e1.infer_type(objectEnv, classTable, curClass);
+        }
         set_type(TreeConstants.Bool);
     }
 }
