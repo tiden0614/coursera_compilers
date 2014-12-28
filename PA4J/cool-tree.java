@@ -542,6 +542,7 @@ class method extends Feature {
         if (expr.get_type() == null) {
             Map<AbstractSymbol, AbstractSymbol> objectEnvWithFormalAndSelf =
                     new HashMap<AbstractSymbol, AbstractSymbol>();
+            objectEnvWithFormalAndSelf.putAll(objectEnv);
             objectEnvWithFormalAndSelf.put(TreeConstants.self, TreeConstants.SELF_TYPE);
             for (Enumeration e = formals.getElements(); e.hasMoreElements(); ) {
                 formalc formal = (formalc) e.nextElement();
@@ -772,7 +773,8 @@ class assign extends Expression {
         }
         AbstractSymbol true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
         if (!classTable.isSubclass(expr.get_type(), true_type)) {
-            classTable.semantError(curClass, this, "The type of the right-hand side expression is not a subclass of " +
+            classTable.semantError(curClass, this, "The type " + expr.get_type() +
+                    "of the right-hand side expression is not a subclass of " +
                     "the type " + type_decl + " of " + name.getString());
             set_type(TreeConstants.Object_);
         } else {
