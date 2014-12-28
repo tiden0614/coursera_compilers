@@ -30,6 +30,7 @@ class ClassTable {
         classMap.put(className, clazz);
         Features features = clazz.features;
         Map<AbstractSymbol, AbstractSymbol> objectEnv = new HashMap<AbstractSymbol, AbstractSymbol>();
+        objectEnv.put(TreeConstants.self, TreeConstants.SELF_TYPE);
         Map<AbstractSymbol, method> methodEnv = new HashMap<AbstractSymbol, method>();
         for (Enumeration e = features.getElements(); e.hasMoreElements(); ) {
             Feature f = (Feature) e.nextElement();

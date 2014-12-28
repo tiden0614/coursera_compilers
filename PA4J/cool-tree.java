@@ -540,19 +540,18 @@ class method extends Feature {
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv, ClassTable classTable, class_c curClass) {
         if (expr.get_type() == null) {
-            Map<AbstractSymbol, AbstractSymbol> objectEnvWithFormalAndSelf =
+            Map<AbstractSymbol, AbstractSymbol> objectEnvWithFormal =
                     new HashMap<AbstractSymbol, AbstractSymbol>();
-            objectEnvWithFormalAndSelf.putAll(objectEnv);
-            objectEnvWithFormalAndSelf.put(TreeConstants.self, TreeConstants.SELF_TYPE);
+            objectEnvWithFormal.putAll(objectEnv);
             for (Enumeration e = formals.getElements(); e.hasMoreElements(); ) {
                 formalc formal = (formalc) e.nextElement();
                 if (formal.name == TreeConstants.self) {
                     classTable.semantError(curClass, this, "Cannot use self as formal parameter");
                     continue;
                 }
-                objectEnvWithFormalAndSelf.put(formal.name, formal.type_decl);
+                objectEnvWithFormal.put(formal.name, formal.type_decl);
             }
-            expr.infer_type(objectEnvWithFormalAndSelf, classTable, curClass);
+            expr.infer_type(objectEnvWithFormal, classTable, curClass);
         }
     }
 }
@@ -608,14 +607,7 @@ class attr extends Feature {
             classTable.semantError(curClass, this, "Cannot declare attribute with name self");
         }
         if (init.get_type() == null) {
-            if (!(init instanceof no_expr)) {
-                Map<AbstractSymbol, AbstractSymbol> objectEnvWithSelf = new HashMap<AbstractSymbol, AbstractSymbol>();
-                objectEnvWithSelf.putAll(objectEnv);
-                objectEnvWithSelf.put(TreeConstants.self, TreeConstants.SELF_TYPE);
-                init.infer_type(objectEnvWithSelf, classTable, curClass);
-            } else {
                 init.infer_type(objectEnv, classTable, curClass);
-            }
         }
         if (!(init instanceof no_expr)) {
             AbstractSymbol true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
