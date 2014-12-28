@@ -328,6 +328,8 @@ class ClassTable {
 
     public ClassTable(Classes cls) {
         semantErrors = 0;
+		objectEnvs = new HashMap<AbstractSymbol, Map<AbstractSymbol, AbstractSymbol>>();
+		methodEnvs = new HashMap<AbstractSymbol, Map<AbstractSymbol, method>>();
 
 	    /* fill this in */
         installBasicClasses();
