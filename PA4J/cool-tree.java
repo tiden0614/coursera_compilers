@@ -617,7 +617,8 @@ class attr extends Feature {
             }
         }
         if (!(init instanceof no_expr)) {
-            if (!classTable.isSubclass(init.get_type(), type_decl)) {
+            AbstractSymbol true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
+            if (!classTable.isSubclass(init.get_type(), true_type)) {
                 classTable.semantError(curClass, this, "Subclass of " + type_decl.getString() + " expected");
             }
         }
@@ -769,7 +770,8 @@ class assign extends Expression {
         if (expr.get_type() == null) {
             expr.infer_type(objectEnv, classTable, curClass);
         }
-        if (!classTable.isSubclass(expr.get_type(), type_decl)) {
+        AbstractSymbol true_type = type_decl == TreeConstants.SELF_TYPE? curClass.name : type_decl;
+        if (!classTable.isSubclass(expr.get_type(), true_type)) {
             classTable.semantError(curClass, this, "The type of the right-hand side expression is not a subclass of " +
                     "the type " + type_decl + " of " + name.getString());
             set_type(TreeConstants.Object_);
@@ -847,7 +849,9 @@ class static_dispatch extends Expression {
                 a.infer_type(objectEnv, classTable, curClass);
             }
         }
-        if (!classTable.isSubclass(expr.get_type(), type_name)) {
+        AbstractSymbol true_type_name = type_name == TreeConstants.SELF_TYPE?
+                curClass.name : type_name;
+        if (!classTable.isSubclass(expr.get_type(), true_type_name)) {
             classTable.semantError(curClass, this, "Expression is not a subclass of type " + type_name.getString());
             set_type(TreeConstants.Object_);
             return;
@@ -969,7 +973,9 @@ class dispatch extends Expression {
                 i++;
                 Expression _actual = (Expression) ea.nextElement();
                 formalc _formal = (formalc) ef.nextElement();
-                if (!classTable.isSubclass(_actual.get_type(), _formal.type_decl)) {
+                AbstractSymbol formal_type = _formal.type_decl == TreeConstants.SELF_TYPE?
+                        expr.get_type() : _formal.type_decl;
+                if (!classTable.isSubclass(_actual.get_type(), formal_type)) {
                     classTable.semantError(curClass, this, "The type of the " + i +
                             "th actual parameter does not conform to that defined by " + name.getString() +
                             "'s formal list");
@@ -1315,9 +1321,9 @@ class let extends Expression {
         }
         if (!(init instanceof no_expr)) {
             AbstractSymbol initType = init.get_type();
-            if (!classTable.isSubclass(initType, type_decl)) {
-                String trueTypeStr = type_decl == TreeConstants.SELF_TYPE?
-                        curClass.getName().getString() : type_decl.getString();
+            AbstractSymbol trueTypeStr = type_decl == TreeConstants.SELF_TYPE?
+                    curClass.getName() : type_decl;
+            if (!classTable.isSubclass(initType, trueTypeStr)) {
                 classTable.semantError(curClass, this, "A subclass of " + trueTypeStr + " is expected");
             }
         } else {
