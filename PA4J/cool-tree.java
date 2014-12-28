@@ -760,6 +760,11 @@ class assign extends Expression {
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
                            ClassTable classTable,
                            class_c curClass) {
+        if (name == TreeConstants.self) {
+            classTable.semantError(curClass, this, "Cannot assign to self");
+            set_type(TreeConstants.Object_);
+            return;
+        }
         AbstractSymbol type_decl = objectEnv.get(name);
         if (expr.get_type() == null) {
             expr.infer_type(objectEnv, classTable, curClass);

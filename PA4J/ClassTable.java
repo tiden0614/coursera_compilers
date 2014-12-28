@@ -261,6 +261,9 @@ class ClassTable {
         }
         while (c1 != TreeConstants.Object_) {
             class_c c1c = classMap.get(c1);
+            if (c1c == null) {
+                return false;
+            }
             if (c1c.parent == c2) {
                 return true;
             }
