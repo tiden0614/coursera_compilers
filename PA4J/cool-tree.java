@@ -1360,11 +1360,17 @@ abstract class int_op extends Expression {
         if (e2.get_type() == null) {
             e2.infer_type(objectEnv, classTable, curClass);
         }
-        if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            classTable.semantError(curClass, this, "Int expected");
-        } else {
-            set_type(TreeConstants.Int);
+        if (e1.get_type() != TreeConstants.Int) {
+            classTable.semantError(curClass, this, "Int expected in arithmetic expression on left-hand side");
+            set_type(TreeConstants.Object_);
+            return;
         }
+        if (e2.get_type() != TreeConstants.Int) {
+            classTable.semantError(curClass, this, "Int expected in arithmetic expression on right-hand side");
+            set_type(TreeConstants.Object_);
+            return;
+        }
+        set_type(TreeConstants.Int);
     }
 }
 
@@ -1633,7 +1639,7 @@ class lt extends Expression {
             e2.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            classTable.semantError(curClass, this, "Int expected");
+            classTable.semantError(curClass, this, "Int expected in <= expression");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -1760,7 +1766,7 @@ class leq extends Expression {
             e2.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            classTable.semantError(curClass, this, "Int expected");
+            classTable.semantError(curClass, this, "Int expected in <= expression");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -2124,7 +2130,14 @@ class object extends Expression {
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
                            ClassTable classTable,
                            class_c curClass) {
-        set_type(objectEnv.get(name));
+        AbstractSymbol env_type = objectEnv.get(name);
+        if (env_type == null) {
+            classTable.semantError(curClass, this, "Cannot resolve variable " + name + " from environment");
+            set_type(TreeConstants.Object_);
+            return;
+        }
+        AbstractSymbol true_type = env_type == TreeConstants.SELF_TYPE? curClass.name : env_type;
+        set_type(true_type);
     }
 }
 
