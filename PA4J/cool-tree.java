@@ -2158,8 +2158,7 @@ class object extends Expression {
             set_type(TreeConstants.Object_);
             return;
         }
-        AbstractSymbol true_type = env_type == TreeConstants.SELF_TYPE? curClass.name : env_type;
-        set_type(true_type);
+        set_type(env_type);
     }
 }
 
