@@ -394,6 +394,11 @@ class programc extends Program {
     /* ClassTable constructor may do some semantic analysis */
         ClassTable classTable = new ClassTable(classes);
 
+        if (classTable.errors()) {
+            System.err.println("Compilation halted due to static semantic errors.");
+            System.exit(1);
+        }
+
         for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
             ((class_c) e.nextElement()).semant_analyse(classTable);
         }

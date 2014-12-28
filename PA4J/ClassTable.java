@@ -414,6 +414,11 @@ class ClassTable {
             return;
         }
         for (class_c cc : classMap.values()) {
+            if (!classMap.containsKey(cc.parent)) {
+                PrintStream p = semantError(cc);
+                p.println("Class " + cc.parent + " is undefined");
+                return;
+            }
             checkLoop(cc);
         }
     }
