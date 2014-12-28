@@ -1639,7 +1639,7 @@ class lt extends Expression {
             e2.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            classTable.semantError(curClass, this, "Int expected in <= expression");
+            classTable.semantError(curClass, this, "Int expected in < expression");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -1700,7 +1700,8 @@ class eq extends Expression {
             e2.infer_type(objectEnv, classTable, curClass);
         }
         if ((isBoolIntStr(e1) || isBoolIntStr(e2)) && e1.get_type() != e2.get_type()) {
-            classTable.semantError(curClass, this, "Same type expected");
+            classTable.semantError(curClass, this, e2.get_type() + " is expected on the left-hand side" +
+                " or " + e1.get_type() + " is expected on the right-hand side");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
