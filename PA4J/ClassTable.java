@@ -27,6 +27,11 @@ class ClassTable {
 
     private void loadClass(class_c clazz) {
         AbstractSymbol className = clazz.name;
+        if (className == TreeConstants.SELF_TYPE) {
+            PrintStream p = semantError(clazz);
+            p.println("Cannot declare SELF_TYPE as a class");
+            return;
+        }
         classMap.put(className, clazz);
         Features features = clazz.features;
         Map<AbstractSymbol, AbstractSymbol> objectEnv = new HashMap<AbstractSymbol, AbstractSymbol>();
