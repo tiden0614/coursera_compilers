@@ -354,6 +354,9 @@ class ClassTable {
                 || c1 == TreeConstants.No_type || c2 == TreeConstants.No_type) {
             return TreeConstants.Object_;
         }
+        if (c1 == c2) {
+            return c1;
+        }
         int len1 = getDistanceToRoot(c1);
         int len2 = getDistanceToRoot(c2);
         // put the longer list in front of the shorter one

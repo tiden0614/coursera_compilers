@@ -1275,12 +1275,13 @@ class typcase extends Expression {
             } else {
                 branchTypeSet.add(_branch.type_decl);
             }
-            AbstractSymbol resolved_branch_type = _branch.type_decl == TreeConstants.SELF_TYPE?
-                    curClass.name : _branch.type_decl;
+            AbstractSymbol resolved_branch_type = expr.get_type() == TreeConstants.SELF_TYPE?
+                    curClass.name : expr.get_type();
             branchTypes.add(resolved_branch_type);
         }
         if (branchTypes.size() == 0) {
             classTable.semantError(curClass, this, "Case expression with no branch");
+            set_type(TreeConstants.Object_);
         } else {
             set_type(classTable.findCommonAncestor(branchTypes));
         }
