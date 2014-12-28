@@ -575,7 +575,9 @@ class method extends Feature {
         }
         AbstractSymbol true_return_type = return_type == TreeConstants.SELF_TYPE?
                 curClass.name : return_type;
-        if (!classTable.isSubclass(expr.get_type(), true_return_type)) {
+        AbstractSymbol true_expr_type = expr.get_type() == TreeConstants.SELF_TYPE?
+                curClass.name : expr.get_type();
+        if (!classTable.isSubclass(true_expr_type, true_return_type)) {
             classTable.semantError(curClass, this, "Inferred return type " + expr.get_type() +
                 " of method " + name + " does not conform to declared return type " + return_type);
         }
