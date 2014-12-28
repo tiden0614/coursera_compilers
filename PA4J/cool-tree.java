@@ -1118,7 +1118,11 @@ class cond extends Expression {
         if (pred.get_type() != TreeConstants.Bool) {
             classTable.semantError(curClass, this, "Bool expected in pred");
         } else {
-            set_type(classTable.findCommonAncestor(then_exp.get_type(), else_exp.get_type()));
+            AbstractSymbol resolved_then_type = then_exp.get_type() == TreeConstants.SELF_TYPE?
+                    curClass.name : then_exp.get_type();
+            AbstractSymbol resolved_else_type = else_exp.get_type() == TreeConstants.SELF_TYPE?
+                    curClass.name : else_exp.get_type();
+            set_type(classTable.findCommonAncestor(resolved_then_type, resolved_else_type));
         }
     }
 
@@ -1256,7 +1260,9 @@ class typcase extends Expression {
             } else {
                 branchTypeSet.add(_branch.type_decl);
             }
-            branchTypes.add(_branch.expr.get_type());
+            AbstractSymbol resolved_branch_type = _branch.type_decl == TreeConstants.SELF_TYPE?
+                    curClass.name : _branch.type_decl;
+            branchTypes.add(resolved_branch_type);
         }
         if (branchTypes.size() == 0) {
             classTable.semantError(curClass, this, "Case expression with no branch");
