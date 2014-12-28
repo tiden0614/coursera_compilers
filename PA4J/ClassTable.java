@@ -248,11 +248,12 @@ class ClassTable {
         method m = null;
         AbstractSymbol temp = className;
         while (m == null) {
-            if (!classMap.containsKey(temp)) {
-                errorStream.println(className.getString() + "does not have a method " + methodName);
+            m = methodEnvs.get(temp).get(methodName);
+            if (temp == TreeConstants.Object_) {
+                PrintStream p = semantError(classMap.get(className));
+                p.println("Class " + className + " does not have a method " + methodName);
                 return null;
             }
-            m = methodEnvs.get(temp).get(methodName);
             temp = getParentClassName(temp);
         }
         return m;
