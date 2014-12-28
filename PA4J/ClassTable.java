@@ -1,5 +1,3 @@
-import apple.laf.JRSUIUtils;
-
 import java.io.PrintStream;
 import java.util.*;
 
@@ -9,37 +7,56 @@ import java.util.*;
  * here to provide a container for the supplied methods.
  */
 class ClassTable {
-    private static PrintStream errorStream = System.err;
-    private static int semantErrors;
-    private static class_c baseClass;
-    private static Map<AbstractSymbol, class_c> classMap = new Hashtable<AbstractSymbol, class_c>();
+    private PrintStream errorStream = System.err;
+    private int semantErrors;
+    private class_c baseClass;
+    private Map<AbstractSymbol, class_c> classMap = new Hashtable<AbstractSymbol, class_c>();
+    private Map<AbstractSymbol, Map<AbstractSymbol, method>> methodEnvs;
+    private Map<AbstractSymbol, Map<AbstractSymbol, AbstractSymbol>> objectEnvs;
 
-    private class_c addClass(
+    private class_c addBasicClass(
             int lineNumber,
             AbstractSymbol className,
             AbstractSymbol parentName,
             Features features,
             AbstractSymbol fileName) {
-        if (classMap.keySet().contains(className)) {
-            //TODO error handling if there is already a class with this name
-        }
         class_c c = new class_c(lineNumber, className, parentName, features, fileName);
-        classMap.put(className, c);
+        loadClass(c);
         return c;
     }
 
-    private static AbstractSymbol getParentClassName(AbstractSymbol c) {
+    private void loadClass(class_c clazz) {
+        AbstractSymbol className = clazz.name;
+        classMap.put(className, clazz);
+        Features features = clazz.features;
+        Map<AbstractSymbol, AbstractSymbol> objectEnv = new HashMap<AbstractSymbol, AbstractSymbol>();
+        Map<AbstractSymbol, method> methodEnv = new HashMap<AbstractSymbol, method>();
+        for (Enumeration e = features.getElements(); e.hasMoreElements(); ) {
+            Feature f = (Feature) e.nextElement();
+            if (f instanceof attr) {
+                attr a = (attr) f;
+                objectEnv.put(a.name, a.type_decl);
+            } else if (f instanceof method) {
+                method m = (method) f;
+                methodEnv.put(m.name, m);
+            }
+        }
+        objectEnvs.put(className, objectEnv);
+        methodEnvs.put(className, methodEnv);
+    }
+
+    private AbstractSymbol getParentClassName(AbstractSymbol c) {
         return classMap.get(c).name;
     }
 
-    private static class_c getParentClass(class_c c) {
+    private class_c getParentClass(class_c c) {
         return classMap.get(c.parent);
     }
 
     private boolean checkLoop(class_c entry) {
         if (entry == null) {
             // class undefined
-            semantError(entry, entry, "Class " + entry.name.getString() + " undefined");
+            errorStream.println("Semant error: null pointer");
             return false;
         }
         class_c p = entry, q = entry;
@@ -89,7 +106,7 @@ class ClassTable {
         //        copy() : SELF_TYPE       returns a copy of the object
 
         class_c Object_class =
-                addClass(0,
+                addBasicClass(0,
                         TreeConstants.Object_,
                         TreeConstants.No_class,
                         new Features(0)
@@ -118,7 +135,7 @@ class ClassTable {
         //        in_int() : Int                "   an int     "  "     "
 
         class_c IO_class =
-                addClass(0,
+                addBasicClass(0,
                         TreeConstants.IO,
                         TreeConstants.Object_,
                         new Features(0)
@@ -154,7 +171,7 @@ class ClassTable {
         // "val" for the integer.
 
         class_c Int_class =
-                addClass(0,
+                addBasicClass(0,
                         TreeConstants.Int,
                         TreeConstants.Object_,
                         new Features(0)
@@ -166,7 +183,7 @@ class ClassTable {
 
         // Bool also has only the "val" slot.
         class_c Bool_class =
-                addClass(0,
+                addBasicClass(0,
                         TreeConstants.Bool,
                         TreeConstants.Object_,
                         new Features(0)
@@ -184,7 +201,7 @@ class ClassTable {
         //       substr(arg: Int, arg2: Int): Str substring selection
 
         class_c Str_class =
-                addClass(0,
+                addBasicClass(0,
                         TreeConstants.Str,
                         TreeConstants.Object_,
                         new Features(0)
@@ -222,12 +239,20 @@ class ClassTable {
                                         new no_expr(0))),
                         filename);
 
-	/* Do somethind with Object_class, IO_class, Int_class,
+	/* Do something with Object_class, IO_class, Int_class,
            Bool_class, and Str_class here */
 
     }
 
-    public static boolean isSubclass(AbstractSymbol c1, AbstractSymbol c2) {
+    public method getMethod(AbstractSymbol className, AbstractSymbol methodName) {
+        return methodEnvs.get(className).get(methodName);
+    }
+
+    public Map<AbstractSymbol, AbstractSymbol> getObjectEnv(AbstractSymbol className) {
+        return objectEnvs.get(className);
+    }
+
+    public boolean isSubclass(AbstractSymbol c1, AbstractSymbol c2) {
         if (c1 == c2) {
             return true;
         }
@@ -244,7 +269,7 @@ class ClassTable {
         return false;
     }
 
-    public static AbstractSymbol findCommonAncestor(AbstractSymbol c1, AbstractSymbol c2) {
+    public AbstractSymbol findCommonAncestor(AbstractSymbol c1, AbstractSymbol c2) {
         if (c1 == TreeConstants.Object_ || c2 == TreeConstants.Object_) {
             return TreeConstants.Object_;
         }
@@ -276,7 +301,7 @@ class ClassTable {
         return c1;
     }
 
-    public static AbstractSymbol findCommonAncestor(List<AbstractSymbol> list) {
+    public AbstractSymbol findCommonAncestor(List<AbstractSymbol> list) {
         if (list.size() == 0) {
             PrintStream p = semantError();
             p.print("Error: case expression with no branch");
@@ -292,7 +317,7 @@ class ClassTable {
         }
     }
 
-    private static int getDistanceToRoot (AbstractSymbol c1) {
+    private int getDistanceToRoot (AbstractSymbol c1) {
         int distance = 1;
         while (c1 != TreeConstants.Object_) {
             c1 = getParentClassName(c1);
@@ -304,23 +329,20 @@ class ClassTable {
     public ClassTable(Classes cls) {
         semantErrors = 0;
 
-	/* fill this in */
+	    /* fill this in */
         installBasicClasses();
-        Enumeration<class_c> enumeration = cls.getElements();
-        class_c c;
-        while (enumeration.hasMoreElements()) {
-            c = enumeration.nextElement();
+        for(Enumeration e = cls.getElements(); e.hasMoreElements(); ) {
+            class_c c = (class_c) e.nextElement();
             if (classMap.containsKey(c.name)) {
-                // TODO error handling for class redefinination
+                PrintStream p = semantError(c);
+                p.println("Class " + c.name.getString() + " is already defined");
             } else {
-                classMap.put(c.name, c);
+                loadClass(c);
             }
         }
         for (class_c cc : classMap.values()) {
             checkLoop(cc);
         }
-
-
     }
 
     /**
@@ -332,7 +354,7 @@ class ClassTable {
      * @return a print stream to which the rest of the error message is
      * to be printed.
      */
-    public static PrintStream semantError(class_c c) {
+    public PrintStream semantError(class_c c) {
         return semantError(c.getFilename(), c);
     }
 
@@ -346,7 +368,7 @@ class ClassTable {
      * @return a print stream to which the rest of the error message is
      * to be printed.
      */
-    public static PrintStream semantError(AbstractSymbol filename, TreeNode t) {
+    public PrintStream semantError(AbstractSymbol filename, TreeNode t) {
         errorStream.print(filename + ":" + t.getLineNumber() + ": ");
         return semantError();
     }
@@ -358,15 +380,15 @@ class ClassTable {
      * @return a print stream to which the error message is
      * to be printed.
      */
-    public static PrintStream semantError() {
+    public PrintStream semantError() {
         semantErrors++;
         return errorStream;
     }
 
     /**
-     * Returns true if there are any static semantic errors.
+     * Returns true if there are any semantic errors.
      */
-    public static boolean errors() {
+    public boolean errors() {
         return semantErrors != 0;
     }
 
@@ -377,7 +399,7 @@ class ClassTable {
      * @param t        the tree node
      * @param msg      the message
      */
-    public static void semantError(class_c c, TreeNode t, String msg) {
+    public void semantError(class_c c, TreeNode t, String msg) {
         PrintStream stream = semantError(c.getFilename(), t);
         stream.print(msg + "\n");
     }

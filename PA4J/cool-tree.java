@@ -88,6 +88,9 @@ abstract class Feature extends TreeNode {
 
     public abstract void dump_with_types(PrintStream out, int n);
 
+    public abstract void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
+                                    ClassTable classTable,
+                                    class_c curClass);
 }
 
 
@@ -215,13 +218,8 @@ abstract class Expression extends TreeNode {
 
 
     public abstract void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass);
-
-    protected void reportError(class_c curClass, String msg) {
-        ClassTable.semantError(curClass, this, msg);
-        set_type(TreeConstants.Object_);
-    }
 }
 
 
@@ -233,7 +231,7 @@ abstract class Expression extends TreeNode {
 class Expressions extends ListNode {
     public final static Class elementClass = Expression.class;
     private AbstractSymbol type = null;
-    public AbstractSymbol set_type(AbstractSymbol type) {
+    public void set_type(AbstractSymbol type) {
         this.type = type;
     }
     public AbstractSymbol get_type() {
@@ -271,13 +269,13 @@ class Expressions extends ListNode {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
-        Enumeration<Expression> expressionEnumeration = getElements();
+        Enumeration expressionEnumeration = getElements();
         while (expressionEnumeration.hasMoreElements()) {
-            Expression expr = expressionEnumeration.nextElement();
+            Expression expr = (Expression) expressionEnumeration.nextElement();
             if (expr.get_type() == null) {
-                expr.infer_type(objectEnv, methodEnv, curClass);
+                expr.infer_type(objectEnv, classTable, curClass);
             }
             set_type(expr.get_type());
         }
@@ -395,7 +393,10 @@ class programc extends Program {
     public void semant() {
     /* ClassTable constructor may do some semantic analysis */
         ClassTable classTable = new ClassTable(classes);
-	
+
+        for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
+            ((class_c) e.nextElement()).semant_analyse(classTable);
+        }
 	/* some semantic analysis code may go here */
 
         if (classTable.errors()) {
@@ -423,9 +424,9 @@ class class_c extends Class_ {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for name
-     * @param a1         initial value for parent
-     * @param a2         initial value for features
-     * @param a3         initial value for filename
+     * @param a2         initial value for parent
+     * @param a3         initial value for features
+     * @param a4         initial value for filename
      */
     public class_c(int lineNumber, AbstractSymbol a1, AbstractSymbol a2, Features a3, AbstractSymbol a4) {
         super(lineNumber);
@@ -474,6 +475,14 @@ class class_c extends Class_ {
         out.println(Utilities.pad(n + 2) + ")");
     }
 
+    public void semant_analyse(ClassTable classTable) {
+        Map<AbstractSymbol, AbstractSymbol> objectEnv = classTable.getObjectEnv(this.name);
+        // check types for attributes and methods
+        for (Enumeration e = features.getElements(); e.hasMoreElements(); ) {
+            Feature feature = (Feature) e.nextElement();
+            feature.infer_type(objectEnv, classTable, this);
+        }
+    }
 }
 
 
@@ -493,9 +502,9 @@ class method extends Feature {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for name
-     * @param a1         initial value for formals
-     * @param a2         initial value for return_type
-     * @param a3         initial value for expr
+     * @param a2         initial value for formals
+     * @param a3         initial value for return_type
+     * @param a4         initial value for expr
      */
     public method(int lineNumber, AbstractSymbol a1, Formals a2, AbstractSymbol a3, Expression a4) {
         super(lineNumber);
@@ -529,6 +538,22 @@ class method extends Feature {
         expr.dump_with_types(out, n + 2);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv, ClassTable classTable, class_c curClass) {
+        if (expr.get_type() == null) {
+            Map<AbstractSymbol, AbstractSymbol> objectEnvWithFormalAndSelf =
+                    new HashMap<AbstractSymbol, AbstractSymbol>();
+            objectEnvWithFormalAndSelf.put(TreeConstants.self, TreeConstants.SELF_TYPE);
+            for (Enumeration e = formals.getElements(); e.hasMoreElements(); ) {
+                formalc formal = (formalc) e.nextElement();
+                if (formal.name == TreeConstants.self) {
+                    classTable.semantError(curClass, this, "Cannot use self as formal parameter");
+                    continue;
+                }
+                objectEnvWithFormalAndSelf.put(formal.name, formal.type_decl);
+            }
+            expr.infer_type(objectEnvWithFormalAndSelf, classTable, curClass);
+        }
+    }
 }
 
 
@@ -547,8 +572,8 @@ class attr extends Feature {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for name
-     * @param a1         initial value for type_decl
-     * @param a2         initial value for init
+     * @param a2         initial value for type_decl
+     * @param a3         initial value for init
      */
     public attr(int lineNumber, AbstractSymbol a1, AbstractSymbol a2, Expression a3) {
         super(lineNumber);
@@ -577,6 +602,26 @@ class attr extends Feature {
         init.dump_with_types(out, n + 2);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv, ClassTable classTable, class_c curClass) {
+        if (name == TreeConstants.self) {
+            classTable.semantError(curClass, this, "Cannot declare attribute with name self");
+        }
+        if (init.get_type() == null) {
+            if (!(init instanceof no_expr)) {
+                Map<AbstractSymbol, AbstractSymbol> objectEnvWithSelf = new HashMap<AbstractSymbol, AbstractSymbol>();
+                objectEnvWithSelf.putAll(objectEnv);
+                objectEnvWithSelf.put(TreeConstants.self, TreeConstants.SELF_TYPE);
+                init.infer_type(objectEnvWithSelf, classTable, curClass);
+            } else {
+                init.infer_type(objectEnv, classTable, curClass);
+            }
+        }
+        if (!(init instanceof no_expr)) {
+            if (!classTable.isSubclass(init.get_type(), type_decl)) {
+                classTable.semantError(curClass, this, "Subclass of " + type_decl.getString() + " expected");
+            }
+        }
+    }
 }
 
 
@@ -594,7 +639,7 @@ class formalc extends Formal {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for name
-     * @param a1         initial value for type_decl
+     * @param a2         initial value for type_decl
      */
     public formalc(int lineNumber, AbstractSymbol a1, AbstractSymbol a2) {
         super(lineNumber);
@@ -685,7 +730,7 @@ class assign extends Expression {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for name
-     * @param a1         initial value for expr
+     * @param a2         initial value for expr
      */
     public assign(int lineNumber, AbstractSymbol a1, Expression a2) {
         super(lineNumber);
@@ -712,6 +757,21 @@ class assign extends Expression {
         dump_type(out, n);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
+                           ClassTable classTable,
+                           class_c curClass) {
+        AbstractSymbol type_decl = objectEnv.get(name);
+        if (expr.get_type() == null) {
+            expr.infer_type(objectEnv, classTable, curClass);
+        }
+        if (!classTable.isSubclass(expr.get_type(), type_decl)) {
+            classTable.semantError(curClass, this, "The type of the right-hand side expression is not a subclass of " +
+                    "the type " + type_decl + " of " + name.getString());
+            set_type(TreeConstants.Object_);
+        } else {
+            set_type(expr.get_type());
+        }
+    }
 }
 
 
@@ -731,9 +791,9 @@ class static_dispatch extends Expression {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for expr
-     * @param a1         initial value for type_name
-     * @param a2         initial value for name
-     * @param a3         initial value for actual
+     * @param a2         initial value for type_name
+     * @param a3         initial value for name
+     * @param a4         initial value for actual
      */
     public static_dispatch(int lineNumber, Expression a1, AbstractSymbol a2, AbstractSymbol a3, Expressions a4) {
         super(lineNumber);
@@ -770,6 +830,57 @@ class static_dispatch extends Expression {
         dump_type(out, n);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
+                           ClassTable classTable,
+                           class_c curClass) {
+        if (expr.get_type() == null) {
+            expr.infer_type(objectEnv, classTable, curClass);
+        }
+        for (Enumeration e = actual.getElements(); e.hasMoreElements(); ) {
+            Expression a = (Expression) e.nextElement();
+            if (a.get_type() == null) {
+                a.infer_type(objectEnv, classTable, curClass);
+            }
+        }
+        if (!classTable.isSubclass(expr.get_type(), type_name)) {
+            classTable.semantError(curClass, this, "Expression is not a subclass of type " + type_name.getString());
+            set_type(TreeConstants.Object_);
+            return;
+        }
+        method m = classTable.getMethod(type_name, name);
+        Formals formals = m.formals;
+        if (actual.getLength() != formals.getLength()) {
+            classTable.semantError(curClass, this, "The number of actual parameters does not conform to " +
+                    "that of formal parameters as defined");
+            set_type(TreeConstants.Object_);
+        } else {
+            // check if the type of every actual parameter conform to what is defined
+            Enumeration ea = actual.getElements();
+            Enumeration ef = formals.getElements();
+            int i = 0;
+            boolean errorDected = false;
+            while (ea.hasMoreElements()) {
+                i++;
+                Expression _actual = (Expression) ea.nextElement();
+                formalc _formal = (formalc) ef.nextElement();
+                if (!classTable.isSubclass(_actual.get_type(), _formal.type_decl)) {
+                    classTable.semantError(curClass, this, "The type of the " + i +
+                            "th actual parameter does not conform to that defined by " + name.getString() +
+                            "'s formal list");
+                    errorDected = true;
+                }
+            }
+            if (errorDected) {
+                set_type(TreeConstants.Object_);
+                return;
+            }
+            // the type of the method is defined by the last element of the formal list
+            AbstractSymbol method_type = m.return_type;
+            AbstractSymbol true_method_type = method_type == TreeConstants.SELF_TYPE?
+                    expr.get_type() : method_type;
+            set_type(true_method_type);
+        }
+    }
 }
 
 
@@ -788,8 +899,8 @@ class dispatch extends Expression {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for expr
-     * @param a1         initial value for name
-     * @param a2         initial value for actual
+     * @param a2         initial value for name
+     * @param a3         initial value for actual
      */
     public dispatch(int lineNumber, Expression a1, AbstractSymbol a2, Expressions a3) {
         super(lineNumber);
@@ -823,6 +934,55 @@ class dispatch extends Expression {
         dump_type(out, n);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
+                           ClassTable classTable,
+                           class_c curClass) {
+        if (expr.get_type() == null) {
+            expr.infer_type(objectEnv, classTable, curClass);
+        }
+        for (Enumeration e = actual.getElements(); e.hasMoreElements(); ) {
+            Expression a = (Expression) e.nextElement();
+            if (a.get_type() == null) {
+                a.infer_type(objectEnv, classTable, curClass);
+            }
+        }
+        AbstractSymbol expr_true_type = expr.get_type() == TreeConstants.SELF_TYPE?
+                curClass.name : expr.get_type();
+        method m = classTable.getMethod(expr_true_type, name);
+        Formals formals = m.formals;
+        if (actual.getLength() != formals.getLength()) {
+            classTable.semantError(curClass, this, "The number of actual parameters does not conform to " +
+                    "that of formal parameters as defined");
+            set_type(TreeConstants.Object_);
+        } else {
+            // check if the type of every actual parameter conform to what is defined
+            Enumeration ea = actual.getElements();
+            Enumeration ef = formals.getElements();
+            int i = 0;
+            boolean errorDected = false;
+            while (ea.hasMoreElements()) {
+                i++;
+                Expression _actual = (Expression) ea.nextElement();
+                formalc _formal = (formalc) ef.nextElement();
+                if (!classTable.isSubclass(_actual.get_type(), _formal.type_decl)) {
+                    classTable.semantError(curClass, this, "The type of the " + i +
+                            "th actual parameter does not conform to that defined by " + name.getString() +
+                            "'s formal list");
+                    errorDected = true;
+                }
+            }
+            if (errorDected) {
+                set_type(TreeConstants.Object_);
+                return;
+            }
+            // the type of the method is defined by the last element of the formal list
+            AbstractSymbol method_type = m.return_type;
+            AbstractSymbol true_method_type = method_type == TreeConstants.SELF_TYPE?
+                    expr.get_type() : method_type;
+            set_type(true_method_type);
+        }
+    }
+
 }
 
 
@@ -841,8 +1001,8 @@ class cond extends Expression {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for pred
-     * @param a1         initial value for then_exp
-     * @param a2         initial value for else_exp
+     * @param a2         initial value for then_exp
+     * @param a3         initial value for else_exp
      */
     public cond(int lineNumber, Expression a1, Expression a2, Expression a3) {
         super(lineNumber);
@@ -872,6 +1032,25 @@ class cond extends Expression {
         dump_type(out, n);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
+                           ClassTable classTable,
+                           class_c curClass) {
+        if (pred.get_type() == null) {
+            pred.infer_type(objectEnv, classTable, curClass);
+        }
+        if (then_exp.get_type() == null) {
+            then_exp.infer_type(objectEnv, classTable, curClass);
+        }
+        if (else_exp.get_type() == null) {
+            else_exp.infer_type(objectEnv, classTable, curClass);
+        }
+        if (pred.get_type() != TreeConstants.Bool) {
+            classTable.semantError(curClass, this, "Bool expected in pred");
+        } else {
+            set_type(classTable.findCommonAncestor(then_exp.get_type(), else_exp.get_type()));
+        }
+    }
+
 }
 
 
@@ -889,7 +1068,7 @@ class loop extends Expression {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for pred
-     * @param a1         initial value for body
+     * @param a2         initial value for body
      */
     public loop(int lineNumber, Expression a1, Expression a2) {
         super(lineNumber);
@@ -916,6 +1095,22 @@ class loop extends Expression {
         dump_type(out, n);
     }
 
+    public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
+                           ClassTable classTable,
+                           class_c curClass) {
+        if (pred.get_type() == null) {
+            pred.infer_type(objectEnv, classTable, curClass);
+        }
+        if (body.get_type() == null) {
+            body.infer_type(objectEnv, classTable, curClass);
+        }
+        if (pred.get_type() != TreeConstants.Bool) {
+            classTable.semantError(curClass, this, "Bool expected in pred");
+        } else {
+            set_type(TreeConstants.Object_);
+        }
+    }
+
 }
 
 
@@ -933,7 +1128,7 @@ class typcase extends Expression {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for expr
-     * @param a1         initial value for cases
+     * @param a2         initial value for cases
      */
     public typcase(int lineNumber, Expression a1, Cases a2) {
         super(lineNumber);
@@ -963,27 +1158,30 @@ class typcase extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (expr.get_type() == null) {
-            expr.infer_type(objectEnv, methodEnv, curClass);
+            expr.infer_type(objectEnv, classTable, curClass);
         }
         List<AbstractSymbol> branchTypes = new LinkedList<AbstractSymbol>();
-        Enumeration<branch> enumeration = cases.getElements();
+        Enumeration enumeration = cases.getElements();
         while (enumeration.hasMoreElements()) {
-            branch _branch = enumeration.nextElement();
+            branch _branch = (branch) enumeration.nextElement();
+            if (_branch.name == TreeConstants.self) {
+                classTable.semantError(curClass, this, "Cannot declare self as variable name");
+            }
             if (_branch.expr.get_type() == null) {
                 Map<AbstractSymbol, AbstractSymbol> branchEnv = new Hashtable<AbstractSymbol, AbstractSymbol>();
                 branchEnv.putAll(objectEnv);
                 branchEnv.put(_branch.name, _branch.type_decl);
-                _branch.expr.infer_type(branchEnv, methodEnv, curClass);
+                _branch.expr.infer_type(branchEnv, classTable, curClass);
             }
             branchTypes.add(_branch.expr.get_type());
         }
         if (branchTypes.size() == 0) {
-            reportError(curClass, "Case expression with no branch");
+            classTable.semantError(curClass, this, "Case expression with no branch");
         } else {
-            set_type(ClassTable.findCommonAncestor(branchTypes));
+            set_type(classTable.findCommonAncestor(branchTypes));
         }
     }
 
@@ -1029,10 +1227,10 @@ class block extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (body.get_type() == null) {
-            body.infer_type(objectEnv, methodEnv, curClass);
+            body.infer_type(objectEnv, classTable, curClass);
         }
         set_type(body.get_type());
     }
@@ -1092,10 +1290,13 @@ class let extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
+        if (identifier == TreeConstants.self) {
+            classTable.semantError(curClass, this, "Cannot declare self as variable name");
+        }
         if (init.get_type() == null) {
-            init.infer_type(objectEnv, methodEnv, curClass);
+            init.infer_type(objectEnv, classTable, curClass);
         }
         if (body.get_type() == null) {
             Map<AbstractSymbol, AbstractSymbol> bodyEnv = new Hashtable<AbstractSymbol, AbstractSymbol>();
@@ -1105,14 +1306,14 @@ class let extends Expression {
                 trueType = curClass.name;
             }
             bodyEnv.put(identifier, trueType);
-            body.infer_type(bodyEnv, methodEnv, curClass);
+            body.infer_type(bodyEnv, classTable, curClass);
         }
         if (!(init instanceof no_expr)) {
             AbstractSymbol initType = init.get_type();
-            if (!ClassTable.isSubclass(initType, type_decl)) {
+            if (!classTable.isSubclass(initType, type_decl)) {
                 String trueTypeStr = type_decl == TreeConstants.SELF_TYPE?
                         curClass.getName().getString() : type_decl.getString();
-                reportError(curClass, "A subclass of " + trueTypeStr + " is expected");
+                classTable.semantError(curClass, this, "A subclass of " + trueTypeStr + " is expected");
             }
         } else {
             set_type(body.get_type());
@@ -1129,16 +1330,16 @@ abstract class int_op extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (e1.get_type() == null) {
-            e1.infer_type(objectEnv, methodEnv, curClass);
+            e1.infer_type(objectEnv, classTable, curClass);
         }
         if (e2.get_type() == null) {
-            e2.infer_type(objectEnv, methodEnv, curClass);
+            e2.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            reportError(curClass, "Int expected");
+            classTable.semantError(curClass, this, "Int expected");
         } else {
             set_type(TreeConstants.Int);
         }
@@ -1156,7 +1357,7 @@ class plus extends int_op {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for e1
-     * @param a1         initial value for e2
+     * @param a2         initial value for e2
      */
     public plus(int lineNumber, Expression a1, Expression a2) {
         super(lineNumber);
@@ -1197,7 +1398,7 @@ class sub extends int_op {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for e1
-     * @param a1         initial value for e2
+     * @param a2         initial value for e2
      */
     public sub(int lineNumber, Expression a1, Expression a2) {
         super(lineNumber);
@@ -1238,7 +1439,7 @@ class mul extends int_op {
      *
      * @param lineNumber the line in the source file from which this node came.
      * @param a1         initial value for e1
-     * @param a1         initial value for e2
+     * @param a2         initial value for e2
      */
     public mul(int lineNumber, Expression a1, Expression a2) {
         super(lineNumber);
@@ -1345,13 +1546,13 @@ class neg extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (e1.get_type() == null) {
-            e1.infer_type(objectEnv, methodEnv, curClass);
+            e1.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int) {
-            reportError(curClass, "Int Expected");
+            classTable.semantError(curClass, this, "Int Expected");
         } else {
             set_type(TreeConstants.Bool);
         }
@@ -1401,16 +1602,16 @@ class lt extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (e1.get_type() == null) {
-            e1.infer_type(objectEnv, methodEnv, curClass);
+            e1.infer_type(objectEnv, classTable, curClass);
         }
         if (e2.get_type() == null) {
-            e2.infer_type(objectEnv, methodEnv, curClass);
+            e2.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            ClassTable.semantError(curClass, this, "Int expected");
+            classTable.semantError(curClass, this, "Int expected");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -1462,16 +1663,16 @@ class eq extends Expression {
 
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (e1.get_type() == null) {
-            e1.infer_type(objectEnv, methodEnv, curClass);
+            e1.infer_type(objectEnv, classTable, curClass);
         }
         if (e2.get_type() == null) {
-            e2.infer_type(objectEnv, methodEnv, curClass);
+            e2.infer_type(objectEnv, classTable, curClass);
         }
         if ((isBoolIntStr(e1) || isBoolIntStr(e2)) && e1.get_type() != e2.get_type()) {
-            ClassTable.semantError(curClass, this, "Same type expected");
+            classTable.semantError(curClass, this, "Same type expected");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -1528,16 +1729,16 @@ class leq extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (e1.get_type() == null) {
-            e1.infer_type(objectEnv, methodEnv, curClass);
+            e1.infer_type(objectEnv, classTable, curClass);
         }
         if (e2.get_type() == null) {
-            e2.infer_type(objectEnv, methodEnv, curClass);
+            e2.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Int || e2.get_type() != TreeConstants.Int) {
-            ClassTable.semantError(curClass, this, "Int expected");
+            classTable.semantError(curClass, this, "Int expected");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -1583,13 +1784,13 @@ class comp extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (e1.get_type() == null) {
-            e1.infer_type(objectEnv, methodEnv, curClass);
+            e1.infer_type(objectEnv, classTable, curClass);
         }
         if (e1.get_type() != TreeConstants.Bool) {
-            ClassTable.semantError(curClass, this, "Bool expected");
+            classTable.semantError(curClass, this, "Bool expected");
             set_type(TreeConstants.Object_);
         } else {
             set_type(TreeConstants.Bool);
@@ -1635,7 +1836,7 @@ class int_const extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         set_type(TreeConstants.Int);
     }
@@ -1679,7 +1880,7 @@ class bool_const extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         set_type(TreeConstants.Bool);
     }
@@ -1725,7 +1926,7 @@ class string_const extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         set_type(TreeConstants.Str);
     }
@@ -1769,7 +1970,7 @@ class new_ extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         if (type_name == TreeConstants.SELF_TYPE) {
             set_type(curClass.name);
@@ -1817,7 +2018,7 @@ class isvoid extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         set_type(TreeConstants.Bool);
     }
@@ -1855,7 +2056,7 @@ class no_expr extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         set_type(TreeConstants.Object_);
     }
@@ -1899,7 +2100,7 @@ class object extends Expression {
     }
 
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
-                           Map<AbstractSymbol, List<AbstractSymbol>> methodEnv,
+                           ClassTable classTable,
                            class_c curClass) {
         set_type(objectEnv.get(name));
     }
