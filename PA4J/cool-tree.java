@@ -577,9 +577,15 @@ class method extends Feature {
                 curClass.name : return_type;
         AbstractSymbol true_expr_type = expr.get_type() == TreeConstants.SELF_TYPE?
                 curClass.name : expr.get_type();
-        if (!classTable.isSubclass(true_expr_type, true_return_type)) {
+        if (return_type == TreeConstants.SELF_TYPE && expr.get_type() != TreeConstants.SELF_TYPE) {
+            classTable.semantError(curClass, this, "Inferred return type " + expr.get_type() +
+                    " of method " + name + " does not conform to declared return type " + return_type);
+            return;
+        }
+        else if (!classTable.isSubclass(true_expr_type, true_return_type)) {
             classTable.semantError(curClass, this, "Inferred return type " + expr.get_type() +
                 " of method " + name + " does not conform to declared return type " + return_type);
+            return;
         }
         method mFromSuper = classTable.getMethodFromSuper(curClass.name, name, curClass);
         if (mFromSuper != null) {
