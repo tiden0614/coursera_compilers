@@ -347,7 +347,7 @@ class ClassTable {
     public AbstractSymbol findCommonAncestor(AbstractSymbol c1, AbstractSymbol c2) {
         if (!classMap.containsKey(c1) || !classMap.containsKey(c2)) {
             PrintStream p = semantError();
-            p.println("Error: " + c1 + " or " + " is undeclared");
+            p.println("Error: " + c1 + " or " + c2 + " is undeclared");
             return TreeConstants.Object_;
         }
         if (c1 == TreeConstants.Object_ || c2 == TreeConstants.Object_
