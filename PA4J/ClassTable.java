@@ -255,17 +255,30 @@ class ClassTable {
     }
 
     public method getMethod(AbstractSymbol className, AbstractSymbol methodName, class_c curClass) {
+        method m = methodEnvs.get(className).get(methodName);
+        if (m == null) {
+            m = getMethodFromSuper(className, methodName, curClass);
+        }
+        if (m == null) {
+            PrintStream p = semantError(curClass);
+            p.println("Class " + className + " does not have a method " + methodName);
+        }
+        return m;
+    }
+
+    public method getMethodFromSuper(AbstractSymbol className, AbstractSymbol methodName, class_c curClass) {
         if (!classMap.containsKey(className)) {
             PrintStream p = semantError(curClass);
             p.println("Class " + className + " is undefined");
         }
+        if (className == TreeConstants.Object_) {
+            return null;
+        }
         method m = null;
-        AbstractSymbol temp = className;
+        AbstractSymbol temp = getParentClassName(className);
         while (m == null) {
             m = methodEnvs.get(temp).get(methodName);
             if (temp == TreeConstants.Object_ && m == null) {
-                PrintStream p = semantError(curClass);
-                p.println("Class " + className + " does not have a method " + methodName);
                 return null;
             }
             temp = getParentClassName(temp);

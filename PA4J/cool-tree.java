@@ -577,6 +577,25 @@ class method extends Feature {
             classTable.semantError(curClass, this, "Inferred return type " + expr.get_type() +
                 " of method " + name + " does not conform to declared return type " + return_type);
         }
+        method mFromSuper = classTable.getMethodFromSuper(curClass.name, name, curClass);
+        if (mFromSuper != null) {
+            if (formals.getLength() != mFromSuper.formals.getLength()) {
+                classTable.semantError(curClass, this, "In redefined method " + name +
+                ", the number of parameters is different from original declaration");
+            } else {
+                Enumeration eThis = formals.getElements();
+                Enumeration eThat = mFromSuper.formals.getElements();
+                while (eThis.hasMoreElements()) {
+                    formalc fThis = (formalc) eThis.nextElement();
+                    formalc fThat = (formalc) eThat.nextElement();
+                    if (fThat.type_decl != fThis.type_decl) {
+                        classTable.semantError(curClass, this, "In redefined method " + name +
+                                ", parameters type" + fThis.type_decl +
+                                " different from original type " + fThat.type_decl);
+                    }
+                }
+            }
+        }
     }
 }
 
