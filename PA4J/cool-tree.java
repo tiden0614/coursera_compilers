@@ -568,6 +568,10 @@ class method extends Feature {
             }
             expr.infer_type(objectEnvWithFormal, classTable, curClass);
         }
+        if (!classTable.isSubclass(expr.get_type(), return_type)) {
+            classTable.semantError(curClass, this, "Inferred return type " + expr.get_type() +
+                " of method " + name + " does not conform to declared return type " + return_type);
+        }
     }
 }
 
