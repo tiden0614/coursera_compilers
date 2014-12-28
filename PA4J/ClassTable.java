@@ -322,6 +322,9 @@ class ClassTable {
     }
 
     public boolean isSubclass(AbstractSymbol c1, AbstractSymbol c2) {
+        if (c1 == null || c2 == null) {
+            return false;
+        }
         if (c1 == c2) {
             return true;
         }
