@@ -2031,11 +2031,7 @@ class new_ extends Expression {
     public void infer_type(Map<AbstractSymbol, AbstractSymbol> objectEnv,
                            ClassTable classTable,
                            class_c curClass) {
-        if (type_name == TreeConstants.SELF_TYPE) {
-            set_type(curClass.name);
-        } else {
-            set_type(type_name);
-        }
+        set_type(type_name);
     }
 }
 
