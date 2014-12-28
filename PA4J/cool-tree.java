@@ -1275,8 +1275,8 @@ class typcase extends Expression {
             } else {
                 branchTypeSet.add(_branch.type_decl);
             }
-            AbstractSymbol resolved_branch_type = expr.get_type() == TreeConstants.SELF_TYPE?
-                    curClass.name : expr.get_type();
+            AbstractSymbol resolved_branch_type = _branch.expr.get_type() == TreeConstants.SELF_TYPE?
+                    curClass.name : _branch.expr.get_type();
             branchTypes.add(resolved_branch_type);
         }
         if (branchTypes.size() == 0) {
