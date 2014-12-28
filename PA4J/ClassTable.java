@@ -282,7 +282,7 @@ class ClassTable {
         }
         // use a stack to contain all super classes' envs
         Stack<Map<AbstractSymbol, AbstractSymbol>> envStack = new Stack<Map<AbstractSymbol, AbstractSymbol>>();
-        envStack.add(objectEnvs.get(className));
+        envStack.push(objectEnvs.get(className));
         while (className != TreeConstants.Object_) {
             className = getParentClassName(className);
             envStack.push(objectEnvs.get(className));
